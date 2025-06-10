@@ -123,7 +123,7 @@ local espCache = {}
 
 RunService.RenderStepped:Connect(function()
 	for _, enemy in ipairs(Players:GetPlayers()) do
-		if enemy ~= Player and enemy.Team ~= enemy.Team then
+		if enemy ~= Player and Player.Team ~= enemy.Team then
 			local character = enemy.Character
 			if character then
 				local hrp = character:FindFirstChild("HumanoidRootPart")
