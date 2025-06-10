@@ -215,8 +215,7 @@ local espCache = {}
 
 RunService.RenderStepped:Connect(function()
 	if states.Rave and Player.Character then
-		local g = Players:GetPlayers()
-		local p: Player = g[math.random(1, #g)]
+		local p: Player = states.TrollTarget or Players:GetPlayers()[math.random(1, #Players:GetPlayers())]
 		
 		local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 
@@ -224,7 +223,7 @@ RunService.RenderStepped:Connect(function()
 			local targetpos = p.Character.PrimaryPart.Position
 			local start = Vector3.new(0, states.RaveHeight, 0)
 			local length = (start - targetpos).Magnitude
-			tool.RemoteEvent:FireServer(p.Character.Humanoid, -states.RaveHeal, {length, CFrame.new(start, targetpos) * CFrame.new(0, 0, -length / 2)})
+			tool.RemoteEvent:FireServer(p.Character.Humanoid, -states.RaveHeal, {length, CFrame.new(start, targetpos) * CFrame.new(-length / 2, 0, 0)})
 		end
 	end
 	
