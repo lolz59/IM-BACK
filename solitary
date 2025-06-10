@@ -32,6 +32,29 @@ Main:CreateButton("Get sniper", function()
 	end
 end)
 
+local DbSect = Menu:CreateSection("Debug")
+
+DbSect:CreateButton("Goto", function()
+	local Character = Player.Character
+
+	local Nearest = nil
+	local MaxDistance = 10000
+	
+	for i, Target in ipairs(Players:GetPlayers()) do
+		if Target ~= Player and Target.Character and Target.Character.PrimaryPart then
+			local Distance = (Character.PrimaryPart.Position - Target.Character.PrimaryPart.Position).Magnitude
+			
+			if Distance < MaxDistance then
+				Nearest = Target.Character.PrimaryPart
+				MaxDistance = Distance
+			end
+		end
+	end
+	
+	if not Nearest then return end
+	Character:PivotTo(Nearest.Position)
+end)
+
 local MT = getrawmetatable(game)
 local Old = MT.__namecall
 setreadonly(MT, false)
