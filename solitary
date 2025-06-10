@@ -32,9 +32,7 @@ Main:CreateButton("Get sniper", function()
 	end
 end)
 
-local DbSect = Menu:CreateSection("Debug")
-
-DbSect:CreateButton("Goto", function()
+Main:CreateButton("Goto", function()
 	local Character = Player.Character
 
 	local Nearest = nil
