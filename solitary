@@ -12,9 +12,10 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz5
 
 local Menu = library.new("Trench war UI")
 
-local Main = Menu:CreateSection("Main")
+local Main = Menu:CreateSection("Player")
 
 local states = {
+	SpawnRate = 200,
 	HitboxEnabled = false,
 	HitboxSize = 2,
 	Nametags = false,
@@ -50,17 +51,25 @@ Main:CreateButton("Grenade test", function()
 	end
 end)
 
+Main:CreateSlider("Spawn rate (ms)", 2000, function(value)
+	states.SpawnRate = value
+end)
+
 Main:CreateButton("Get sniper", function()
 	local Character = Player.Character
 	local Pos = Character.PrimaryPart.Position
 	
 	while not Backpack:FindFirstChild("Sniper") do
 		GameEvent:FireServer("Spawn", {[2] = Pos})
-		task.wait(0.2)
+		task.wait(states.SpawnRate)
 	end
 end)
 
-Main:CreateButton("Kill all", function()
+--
+
+local Server = Menu:CreateSection("Server")
+
+Server:CreateButton("Kill all", function()
 	for i, player in pairs(Players:GetPlayers()) do
 		if player ~= Player and Player.Character then
 			DamagePlayer(player, Player.Character.Humanoid.Health + 100)
@@ -68,17 +77,21 @@ Main:CreateButton("Kill all", function()
 	end
 end)
 
-Main:CreateToggle("Heal all", function(enabled)
+Server:CreateToggle("Heal all", function(enabled)
 	states.HealAll = enabled
 end)
 
-Main:CreateToggle("Damage all", function(enabled)
+Server:CreateToggle("Damage all", function(enabled)
 	states.DmgAll = enabled
 end)
 
-local TargetLabel = Main:CreateTextLabel("Targeting: none")
+--
 
-Main:CreateTextBox("Username", "Target", function(input)
+local Target = Menu:CreateSection("Target")
+
+local TargetLabel = Target:CreateTextLabel("Targeting: none")
+
+Target:CreateTextBox("Username", "Target", function(input)
 	local inputLower = input:lower()
 	local matchedPlayer = nil
 
@@ -99,16 +112,33 @@ Main:CreateTextBox("Username", "Target", function(input)
 	end
 end)
 
-Main:CreateToggle("Heal target", function(enabled)
+Target:CreateToggle("Heal target", function(enabled)
 	states.HealTroll = enabled
 end)
 
-Main:CreateToggle("Kill target", function(enabled)
+Target:CreateToggle("Kill target", function(enabled)
 	states.KillTroll = enabled
 end)
 
-Main:CreateToggle("Damage target", function(enabled)
+Target:CreateToggle("Damage target", function(enabled)
 	states.DmgTroll = enabled
+end)
+
+Target:CreateButton("View target", function()
+	if states.TrollTarget then
+		local char = states.TrollTarget.Character
+		if char then
+			local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+			if hrp then
+				workspace.CurrentCamera.CameraSubject = hrp
+			end
+		end
+	end
+end)
+
+Target:CreateButton("Stop viewing", function()
+	workspace.CurrentCamera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
+		or workspace.CurrentCamera
 end)
 
 --
@@ -133,42 +163,6 @@ end)
 
 ESP:CreateToggle("Highlight enabled", function(enabled)
 	states.Highlight = enabled
-end)
-
-local CurrentlyViewing
-
-ESP:CreateTextBox("Username", "View", function(input: string)
-	local inputLower = input:lower()
-	local matchedPlayer = nil
-
-	-- Search for the first player whose name starts with the input
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= Player and player.Name:lower():sub(1, #inputLower) == inputLower then
-			matchedPlayer = player
-			break
-		end
-	end
-
-	if matchedPlayer then
-		CurrentlyViewing = matchedPlayer
-		print("Now spectating:", matchedPlayer.Name)
-
-		local char = matchedPlayer.Character
-		if char then
-			local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
-			if hrp then
-				workspace.CurrentCamera.CameraSubject = hrp
-			end
-		end
-	else
-		print("No player found starting with:", input)
-	end
-end)
-
-ESP:CreateButton("Stop viewing", function()
-	CurrentlyViewing = nil
-	workspace.CurrentCamera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
-		or workspace.CurrentCamera
 end)
 
 --
