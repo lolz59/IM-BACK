@@ -300,7 +300,7 @@ task.spawn(function()
 		
 		if states.SpamMortar then
 			if Player.Character:FindFirstChild("Mortar") then
-				Player.Character.Mortar.RemoteEvent:RemoteEvent(Player:GetMouse().Hit.Position)
+				Player.Character.Mortar.RemoteEvent:FireServer(Player:GetMouse().Hit.Position)
 			end
 		end
 
