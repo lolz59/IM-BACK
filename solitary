@@ -119,16 +119,19 @@ end)
 --
 
 local espCache = {}
-
 RunService.RenderStepped:Connect(function()
 	for _, enemy in ipairs(Players:GetPlayers()) do
 		if enemy ~= Player and Player.Team ~= enemy.Team then
 			local character = enemy.Character
-			if character then
+			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+			-- Proceed only if the enemy has a Humanoid and is alive
+			if character and humanoid and humanoid.Health > 0 then
 				local hrp = character:FindFirstChild("HumanoidRootPart")
 				if hrp then
 					hrp.CanCollide = false
 
+					-- Hitbox
 					if states.HitboxEnabled then
 						hrp.Size = Vector3.one * states.HitboxSize
 						hrp.Transparency = 0.5
@@ -137,7 +140,8 @@ RunService.RenderStepped:Connect(function()
 						hrp.Transparency = 1
 					end
 				end
-				
+
+				-- ESP Cache init
 				if not espCache[enemy] then
 					espCache[enemy] = {
 						billboard = nil,
@@ -147,10 +151,9 @@ RunService.RenderStepped:Connect(function()
 
 				local cache = espCache[enemy]
 
-				-- Nametag (BillboardGui)
+				-- Nametag
 				if states.Nametags and hrp then
 					if not cache.billboard then
-						print("Check")
 						local bb = Instance.new("BillboardGui")
 						bb.Adornee = hrp
 						bb.AlwaysOnTop = true
@@ -160,8 +163,9 @@ RunService.RenderStepped:Connect(function()
 						local label = Instance.new("TextLabel", bb)
 						label.Size = UDim2.new(1, 0, 1, 0)
 						label.BackgroundTransparency = 1
-						label.Text = enemy.Name
+						label.Text = enemy.DisplayName
 						label.TextColor3 = Color3.new(1, 0, 0)
+						label.TextStrokeTransparency = 0
 						label.TextScaled = true
 						label.Font = Enum.Font.SourceSansBold
 
@@ -169,7 +173,6 @@ RunService.RenderStepped:Connect(function()
 						cache.billboard = bb
 					end
 				elseif cache.billboard then
-					print("2")
 					cache.billboard:Destroy()
 					cache.billboard = nil
 				end
@@ -177,7 +180,6 @@ RunService.RenderStepped:Connect(function()
 				-- Highlight
 				if states.Highlight then
 					if not cache.highlight then
-						print("a")
 						local hl = Instance.new("Highlight")
 						hl.Name = "EnemyHighlight"
 						hl.FillTransparency = 1
@@ -187,13 +189,20 @@ RunService.RenderStepped:Connect(function()
 						cache.highlight = hl
 					end
 				elseif cache.highlight then
-					print("b")
 					cache.highlight:Destroy()
 					cache.highlight = nil
 				end
+			else
+				-- Cleanup if player is dead
+				if espCache[enemy] then
+					local cache = espCache[enemy]
+					if cache.billboard then cache.billboard:Destroy() end
+					if cache.highlight then cache.highlight:Destroy() end
+					espCache[enemy] = nil
+				end
 			end
 		elseif espCache[enemy] then
-			-- Clean up ESP for non-enemies
+			-- Cleanup if not on enemy team
 			local cache = espCache[enemy]
 			if cache.billboard then cache.billboard:Destroy() end
 			if cache.highlight then cache.highlight:Destroy() end
@@ -201,6 +210,7 @@ RunService.RenderStepped:Connect(function()
 		end
 	end
 end)
+
 
 --
 
