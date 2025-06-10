@@ -65,10 +65,10 @@ MT.__namecall = newcclosure(function(Remote, ...)
 
 	if Remote.Name == "RemoteEvent" and Method == "FireServer" then
 		if Args[2] ~= nil and typeof(Args[2]) == "number" then
-			local Multiplier = tonumber(_G["__Multiplier"])
+			local Multiplier = tonumber(states.Multiplier)
 
 			if Multiplier ~= nil then
-				Args[2] = (Args[2] * _G["__Multiplier"])
+				Args[2] = (Args[2] * Multiplier)
 
 				Remote[Method](Remote, unpack(Args))
 			end
