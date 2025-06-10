@@ -23,37 +23,75 @@ local states = {
 }
 
 Main:CreateSlider("Damage mutliplier", 100, function(value)
-	states.Multiplier = math.max(value, 1)
+	states.Multiplier = value
 end)
 
-Main:CreateButton("Get sniper", function()
+Main:CreateToggle("Get sniper", function(enabled)
 	local Character = Player.Character
-
-	if Character and Character.PrimaryPart then
+	
+	while (not Backpack:FindFirstChild("Sniper")) and enabled do
 		GameEvent:FireServer(GameEvent, "Spawn", Character.PrimaryPart.Position)
-		task.wait(1)
+		task.wait(0.2)
 	end
 end)
 
-Main:CreateButton("Goto", function()
-	local Character = Player.Character
-
-	local Nearest = nil
-	local MaxDistance = 10000
-	
-	for i, Target in ipairs(Players:GetPlayers()) do
-		if Target ~= Player and Target.Character and Target.Character.PrimaryPart then
-			local Distance = (Character.PrimaryPart.Position - Target.Character.PrimaryPart.Position).Magnitude
+Main:CreateButton("Kill all", function()
+	for i, player in pairs(Players:GetPlayers()) do
+		if player ~= Player and Player.Character then
+			local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 			
-			if Distance < MaxDistance then
-				Nearest = Target.Character.PrimaryPart
-				MaxDistance = Distance
+			if tool and tool:FindFirstChild("RemoteEvent") then
+				tool.RemoteEvent:FireServer(player.Character.Humanoid, 100, {
+					[1] = 203.83062744140625,
+					[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
+				})
+			else
+				warn("a")
 			end
 		end
 	end
-	
-	if not Nearest then return end
-	Character:PivotTo(Nearest.CFrame)
+end)
+
+Main:CreateToggle("Heal all", function(enabled)
+	while enabled do
+		for i, player in pairs(Players:GetPlayers()) do
+			if player ~= Player and Player.Character then
+				local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+
+				if tool and tool:FindFirstChild("RemoteEvent") then
+					tool.RemoteEvent:FireServer(player.Character.Humanoid, -100, {
+						[1] = 203.83062744140625,
+						[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
+					})
+				else
+					warn("a")
+				end
+			end
+		end
+		
+		task.wait(0.2)
+	end
+end)
+
+Main:CreateToggle("Damage all", function(enabled)
+	while enabled do
+		for i, player in pairs(Players:GetPlayers()) do
+			if player ~= Player and Player.Character then
+				local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+
+				if tool and tool:FindFirstChild("RemoteEvent") then
+					local dmg = player.Character.Humanoid.Health - 2
+					
+					tool.RemoteEvent:FireServer(player.Character.Humanoid, dmg, {
+						[1] = 203.83062744140625,
+						[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
+					})
+				end
+			end
+		end
+
+		task.wait(0.2)
+	end
 end)
 
 --
