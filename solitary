@@ -65,7 +65,7 @@ Main:CreateButton("Get sniper", function()
 	
 	while not Backpack:FindFirstChild("Sniper") do
 		GameEvent:FireServer("Spawn", {[2] = Pos})
-		task.wait(states.SpawnRate)
+		Backpack:WaitForChild("Sniper", states.SpawnRate / 1000)
 	end
 end)
 
