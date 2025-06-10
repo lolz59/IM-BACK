@@ -22,6 +22,8 @@ local states = {
 	Multiplier = 0,
 	DmgAll = false,
 	HealAll = false,
+	TargetHeal = nil,
+	IsHealing = false,
 }
 
 Main:CreateSlider("Damage mutliplier", 100, function(value)
@@ -60,6 +62,27 @@ end)
 
 Main:CreateToggle("Damage all", function(enabled)
 	states.DmgAll = enabled
+end)
+
+Main:CreateTextBox("Username", "Target", function(input)
+	local inputLower = input:lower()
+	local matchedPlayer = nil
+
+	-- Search for the first player whose name starts with the input
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= Player and player.Name:lower():sub(1, #inputLower) == inputLower then
+			matchedPlayer = player
+			break
+		end
+	end
+
+	if matchedPlayer then
+		states.TargetHeal = matchedPlayer
+	end
+end)
+
+Main:CreateToggle("Heal target", function(enabled)
+	states.IsHealing = enabled
 end)
 
 --
@@ -213,7 +236,7 @@ task.spawn(function()
 	while true do
 		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
 			for i, player in pairs(Players:GetPlayers()) do
-				if player ~= Player and Player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
+				if player ~= Player and Player.Character and player.Character then
 					pcall(function()
 						local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 
@@ -228,6 +251,23 @@ task.spawn(function()
 						end
 					end)
 				end
+			end
+		end
+		
+		if states.TargetHeal and states.IsHealing then
+			if states.TargetHeal.Character then
+				pcall(function()
+					local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+
+					if tool and tool:FindFirstChild("RemoteEvent") then
+						local dmg = -100
+
+						tool.RemoteEvent:FireServer(states.TargetHeal.Character.Humanoid, dmg, {
+							[1] = 203.83062744140625,
+							[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
+						})
+					end
+				end)
 			end
 		end
 
