@@ -22,19 +22,39 @@ local states = {
 	Multiplier = 0,
 	DmgAll = false,
 	HealAll = false,
-	TargetHeal = nil,
-	IsHealing = false,
+	TrollTarget = nil,
+	HealTroll = false,
+	DmgTroll = false,
+	KillTroll = false,
 }
+
+function DamagePlayer(Target: Player, Amount: number)
+	if Target.Character and Target.Character:FindFirstChildWhichIsA("Humanoid") then
+		local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+		
+		if tool and tool:FindFirstChild("RemoteEvent") then
+			tool.RemoteEvent:FireServer(Target.Character.Humanoid, Amount, {1, CFrame.new()})
+		end
+	end
+end
 
 Main:CreateSlider("Damage mutliplier", 100, function(value)
 	states.Multiplier = value
+end)
+
+Main:CreateButton("Grenade test", function()
+	local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+
+	if tool and tool:FindFirstChild("RemoteEvent") then
+		tool.RemoteEvent:FireServer(Vector3.new(50, 100, math.random(-50, 50)) * 10000)
+	end
 end)
 
 Main:CreateButton("Get sniper", function()
 	local Character = Player.Character
 	
 	while not Backpack:FindFirstChild("Sniper") do
-		GameEvent:FireServer(GameEvent, "Spawn", {Character.PrimaryPart.Position})
+		GameEvent:FireServer(GameEvent, "Spawn", {[2] = Character.PrimaryPart.Position})
 		task.wait(0.2)
 	end
 end)
@@ -42,16 +62,7 @@ end)
 Main:CreateButton("Kill all", function()
 	for i, player in pairs(Players:GetPlayers()) do
 		if player ~= Player and Player.Character then
-			local tool = Player.Character:FindFirstChildWhichIsA("Tool")
-			
-			if tool and tool:FindFirstChild("RemoteEvent") then
-				tool.RemoteEvent:FireServer(player.Character.Humanoid, 100, {
-					[1] = 203.83062744140625,
-					[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
-				})
-			else
-				warn("a")
-			end
+			DamagePlayer(player, Player.Character.Humanoid.Health + 100)
 		end
 	end
 end)
@@ -63,6 +74,8 @@ end)
 Main:CreateToggle("Damage all", function(enabled)
 	states.DmgAll = enabled
 end)
+
+local TargetLabel = Main:CreateTextLabel("Targeting: none")
 
 Main:CreateTextBox("Username", "Target", function(input)
 	local inputLower = input:lower()
@@ -77,12 +90,23 @@ Main:CreateTextBox("Username", "Target", function(input)
 	end
 
 	if matchedPlayer then
+		TargetLabel.Text = "Targeting: " .. matchedPlayer.Name
 		states.TargetHeal = matchedPlayer
+	else
+		TargetLabel.Text = "Targeting: none"
 	end
 end)
 
 Main:CreateToggle("Heal target", function(enabled)
-	states.IsHealing = enabled
+	states.HealTroll = enabled
+end)
+
+Main:CreateToggle("Kill target", function(enabled)
+	states.KillTroll = enabled
+end)
+
+Main:CreateToggle("Damage target", function(enabled)
+	states.DmgTroll = enabled
 end)
 
 --
@@ -236,38 +260,25 @@ task.spawn(function()
 	while true do
 		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
 			for i, player in pairs(Players:GetPlayers()) do
-				if player ~= Player and Player.Character and player.Character then
-					pcall(function()
-						local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+				if player ~= Player and player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
+					local dmg = if states.DmgAll then player.Character.Humanoid.Health - 2
+						else -100
 
-						if tool and tool:FindFirstChild("RemoteEvent") then
-							local dmg = if states.DmgAll then player.Character.Humanoid.Health - 2
-								else -100
-
-							tool.RemoteEvent:FireServer(player.Character.Humanoid, dmg, {
-								[1] = 203.83062744140625,
-								[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
-							})
-						end
-					end)
+					DamagePlayer(player, dmg)
 				end
 			end
 		end
 		
-		if states.TargetHeal and states.IsHealing then
-			if states.TargetHeal.Character then
-				pcall(function()
-					local tool = Player.Character:FindFirstChildWhichIsA("Tool")
-
-					if tool and tool:FindFirstChild("RemoteEvent") then
-						local dmg = -100
-
-						tool.RemoteEvent:FireServer(states.TargetHeal.Character.Humanoid, dmg, {
-							[1] = 203.83062744140625,
-							[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
-						})
-					end
-				end)
+		if states.TrollTarget and states.TrollTarget.Character then
+			if states.HealTroll then
+				local dmg = -100
+				DamagePlayer(states.TargetHeal, dmg)
+			elseif states.KillTroll then
+				local dmg = states.TrollTarget.Character.Humanoid.Health + 100
+				DamagePlayer(states.TrollTarget, dmg)
+			elseif states.DmgTroll then
+				local dmg = states.TrollTarget.Character.Humanoid.Health - 2
+				DamagePlayer(states.TrollTarget, dmg)
 			end
 		end
 
