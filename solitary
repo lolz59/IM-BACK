@@ -52,9 +52,10 @@ end)
 
 Main:CreateButton("Get sniper", function()
 	local Character = Player.Character
+	local Pos = Character.PrimaryPart.Position
 	
 	while not Backpack:FindFirstChild("Sniper") do
-		GameEvent:FireServer(GameEvent, "Spawn", {[2] = Character.PrimaryPart.Position})
+		GameEvent:FireServer("Spawn", {[2] = Pos})
 		task.wait(0.2)
 	end
 end)
@@ -91,9 +92,10 @@ Main:CreateTextBox("Username", "Target", function(input)
 
 	if matchedPlayer then
 		TargetLabel.Text = "Targeting: " .. matchedPlayer.Name
-		states.TargetHeal = matchedPlayer
+		states.TrollTarget = matchedPlayer
 	else
 		TargetLabel.Text = "Targeting: none"
+		states.TrollTarget = nil
 	end
 end)
 
@@ -272,7 +274,7 @@ task.spawn(function()
 		if states.TrollTarget and states.TrollTarget.Character then
 			if states.HealTroll then
 				local dmg = -100
-				DamagePlayer(states.TargetHeal, dmg)
+				DamagePlayer(states.TrollTarget, dmg)
 			elseif states.KillTroll then
 				local dmg = states.TrollTarget.Character.Humanoid.Health + 100
 				DamagePlayer(states.TrollTarget, dmg)
