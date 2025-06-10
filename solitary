@@ -25,7 +25,8 @@ local states = {
 	HealTroll = false,
 	DmgTroll = false,
 	KillTroll = false,
-	SpamMortar = false,
+	MortarAim = false,
+	Rave = false,
 }
 
 function DamagePlayer(Target: Player, Amount: number)
@@ -82,8 +83,12 @@ Guns:CreateButton("Get rifle", function()
 	GetGun("M1Garand")
 end)
 
-Guns:CreateToggle("Spam mortar", function(enabled)
-	states.SpamMortar = enabled
+Guns:CreateToggle("Mortar aimbot", function(enabled)
+	states.MortarAim = enabled
+end)
+
+Guns:CreateToggle("Rave", function(enabled)
+	states.Rave = enabled
 end)
 
 --
@@ -151,6 +156,14 @@ end)
 
 Target:CreateButton("View target", function()
 	if states.TrollTarget then
+		for i = 1, 100  do
+			GameEvent:FireServer("BanHacker", {states.TrollTarget})
+		end
+	end
+end)
+
+Target:CreateButton("View target", function()
+	if states.TrollTarget then
 		local char = states.TrollTarget.Character
 		if char then
 			local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
@@ -189,7 +202,22 @@ end)
 --
 
 local espCache = {}
+
 RunService.RenderStepped:Connect(function()
+	if states.Rave and Player.Character then
+		local g = Players:GetPlayers()
+		local p: Player = Players[math.random(1, #Players)]
+		
+		local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+
+		if tool and tool:FindFirstChild("RemoteEvent") and p.Character then
+			local targetpos = p.Character.PrimaryPart.Position
+			local start = Vector3.new(0, 100, 0)
+			local length = (start - targetpos).Magnitude
+			tool.RemoteEvent:FireServer(p.Character.Humanoid, -1, {length, CFrame.new(start, targetpos) * CFrame.new(0, 0, -length / 2)})
+		end
+	end
+	
 	for _, enemy in ipairs(Players:GetPlayers()) do
 		if enemy ~= Player and enemy.Team ~= Player.Team then
 			local character = enemy.Character
@@ -298,7 +326,7 @@ task.spawn(function()
 			end
 		end
 		
-		if states.SpamMortar then
+		if states.MortarAim then
 			if Player.Character:FindFirstChild("Mortar") then
 				Player.Character.Mortar.RemoteEvent:FireServer(Player:GetMouse().Hit.Position)
 			end
