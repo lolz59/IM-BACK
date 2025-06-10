@@ -213,18 +213,20 @@ task.spawn(function()
 	while true do
 		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
 			for i, player in pairs(Players:GetPlayers()) do
-				if player ~= Player and Player.Character then
-					local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+				if player ~= Player and Player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
+					pcall(function()
+						local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 
-					if tool and tool:FindFirstChild("RemoteEvent") then
-						local dmg = if states.DmgAll then player.Character.Humanoid.Health - 2
-							else -100
+						if tool and tool:FindFirstChild("RemoteEvent") then
+							local dmg = if states.DmgAll then player.Character.Humanoid.Health - 2
+								else -100
 
-						tool.RemoteEvent:FireServer(player.Character.Humanoid, dmg, {
-							[1] = 203.83062744140625,
-							[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
-						})
-					end
+							tool.RemoteEvent:FireServer(player.Character.Humanoid, dmg, {
+								[1] = 203.83062744140625,
+								[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
+							})
+						end
+					end)
 				end
 			end
 		end
