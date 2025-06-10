@@ -3,7 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 
 print("test")
 
-local library = require(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
 local Menu = library.new("Blues hub - v2")
 local Main = Menu:CreateSection("Main")
