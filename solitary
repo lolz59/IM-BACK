@@ -17,11 +17,13 @@ local Main = Menu:CreateSection("Main")
 local states = {
 	HitboxEnabled = false,
 	HitboxSize = 2,
+	Nametags = false,
+	Highlight = false,
 	Multiplier = 1,
 }
 
 Main:CreateSlider("Damage mutliplier", 100, function(value)
-	states.Multiplier = 2 + value
+	states.Multiplier = math.max(value, 1)
 end)
 
 Main:CreateButton("Get sniper", function()
@@ -60,17 +62,58 @@ local Hitbox = Menu:CreateSection("Hitbox")
 
 Hitbox:CreateToggle("Hitbox enabled", function(enabled)
 	states.HitboxEnabled = enabled
-	print(enabled)
 end)
 
 Hitbox:CreateSlider("Hitbox size", 100, function(value)
 	states.HitboxSize = 1 + value
 end)
 
-RunService.RenderStepped:Connect(function()
+--
+
+local ESP = Menu:CreateSection("ESP")
+
+ESP:CreateToggle("Nametags enabled", function(enabled)
+	states.Nametags = enabled
+end)
+
+ESP:CreateToggle("Highlight enabled", function(enabled)
+	states.Highlight = enabled
+end)
+
+local CurrentlyViewing
+
+ESP:CreateTextBox("Username", "View", function(input: string)
+	local inputLower = input:lower()
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= Player and player.Team ~= Player.Team then
-			local character = player.Character
+		if player ~= Player and player.Name:lower():sub(1, #inputLower) == inputLower then
+			CurrentlyViewing = player
+			print("Now spectating:", player.Name)
+
+			-- Set camera to follow their HumanoidRootPart
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				workspace.CurrentCamera.CameraSubject = char:FindFirstChild("HumanoidRootPart")
+			end
+			
+			break
+		end
+	end
+end)
+
+ESP:CreateButton("Stop viewing", function()
+	CurrentlyViewing = nil
+	workspace.CurrentCamera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
+		or workspace.CurrentCamera
+end)
+
+--
+
+local espCache = {}
+
+RunService.RenderStepped:Connect(function()
+	for _, enemy in ipairs(Players:GetPlayers()) do
+		if enemy ~= Player and enemy.Team ~= enemy.Team then
+			local character = enemy.Character
 			if character then
 				local hrp = character:FindFirstChild("HumanoidRootPart")
 				if hrp then
@@ -84,12 +127,69 @@ RunService.RenderStepped:Connect(function()
 						hrp.Transparency = 1
 					end
 				end
+				
+				if not espCache[enemy] then
+					espCache[enemy] = {
+						billboard = nil,
+						highlight = nil,
+					}
+				end
+
+				local cache = espCache[enemy]
+
+				-- Nametag (BillboardGui)
+				if states.Nametags and character.PrimaryPart then
+					if not cache.billboard then
+						local bb = Instance.new("BillboardGui")
+						bb.Adornee = character.PrimaryPart
+						bb.AlwaysOnTop = true
+						bb.Size = UDim2.new(0, 100, 0, 20)
+						bb.StudsOffset = Vector3.new(0, 2, 0)
+
+						local label = Instance.new("TextLabel", bb)
+						label.Size = UDim2.new(1, 0, 1, 0)
+						label.BackgroundTransparency = 1
+						label.Text = enemy.Name
+						label.TextColor3 = Color3.new(1, 0, 0)
+						label.TextScaled = true
+						label.Font = Enum.Font.SourceSansBold
+
+						bb.Parent = character.PrimaryPart
+						cache.billboard = bb
+					end
+				elseif cache.billboard then
+					cache.billboard:Destroy()
+					cache.billboard = nil
+				end
+
+				-- Highlight
+				if states.Highlight then
+					if not cache.highlight then
+						local hl = Instance.new("Highlight")
+						hl.Name = "EnemyHighlight"
+						hl.FillTransparency = 1
+						hl.OutlineColor = Color3.new(1, 0, 0)
+						hl.Adornee = character
+						hl.Parent = character
+						cache.highlight = hl
+					end
+				elseif cache.highlight then
+					cache.highlight:Destroy()
+					cache.highlight = nil
+				end
 			end
+		elseif espCache[enemy] then
+			-- Clean up ESP for non-enemies
+			local cache = espCache[enemy]
+			if cache.billboard then cache.billboard:Destroy() end
+			if cache.highlight then cache.highlight:Destroy() end
+			espCache[enemy] = nil
 		end
 	end
 end)
 
 --
+
 local MT = getrawmetatable(game)
 local Old = MT.__namecall
 setreadonly(MT, false)
