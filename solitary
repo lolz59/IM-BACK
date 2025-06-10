@@ -84,23 +84,34 @@ local CurrentlyViewing
 
 ESP:CreateTextBox("Username", "View", function(input: string)
 	local inputLower = input:lower()
+	local matchedPlayer = nil
+
+	-- Search for the first player whose name starts with the input
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= Player and player.Name:lower():sub(1, #inputLower) == inputLower then
-			CurrentlyViewing = player
-			print("Now spectating:", player.Name)
-
-			-- Set camera to follow their HumanoidRootPart
-			local char = player.Character
-			if char and char:FindFirstChild("HumanoidRootPart") then
-				workspace.CurrentCamera.CameraSubject = char:FindFirstChild("HumanoidRootPart")
-			end
-			
+			matchedPlayer = player
 			break
 		end
+	end
+
+	if matchedPlayer then
+		CurrentlyViewing = matchedPlayer
+		print("Now spectating:", matchedPlayer.Name)
+
+		local char = matchedPlayer.Character
+		if char then
+			local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+			if hrp then
+				workspace.CurrentCamera.CameraSubject = hrp
+			end
+		end
+	else
+		print("No player found starting with:", input)
 	end
 end)
 
 ESP:CreateButton("Stop viewing", function()
+	print("Check1")
 	CurrentlyViewing = nil
 	workspace.CurrentCamera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
 		or workspace.CurrentCamera
@@ -138,10 +149,11 @@ RunService.RenderStepped:Connect(function()
 				local cache = espCache[enemy]
 
 				-- Nametag (BillboardGui)
-				if states.Nametags and character.PrimaryPart then
+				if states.Nametags and hrp then
 					if not cache.billboard then
+						print("Check")
 						local bb = Instance.new("BillboardGui")
-						bb.Adornee = character.PrimaryPart
+						bb.Adornee = hrp
 						bb.AlwaysOnTop = true
 						bb.Size = UDim2.new(0, 100, 0, 20)
 						bb.StudsOffset = Vector3.new(0, 2, 0)
@@ -154,10 +166,11 @@ RunService.RenderStepped:Connect(function()
 						label.TextScaled = true
 						label.Font = Enum.Font.SourceSansBold
 
-						bb.Parent = character.PrimaryPart
+						bb.Parent = hrp
 						cache.billboard = bb
 					end
 				elseif cache.billboard then
+					print("2")
 					cache.billboard:Destroy()
 					cache.billboard = nil
 				end
@@ -165,6 +178,7 @@ RunService.RenderStepped:Connect(function()
 				-- Highlight
 				if states.Highlight then
 					if not cache.highlight then
+						print("a")
 						local hl = Instance.new("Highlight")
 						hl.Name = "EnemyHighlight"
 						hl.FillTransparency = 1
@@ -174,6 +188,7 @@ RunService.RenderStepped:Connect(function()
 						cache.highlight = hl
 					end
 				elseif cache.highlight then
+					print("b")
 					cache.highlight:Destroy()
 					cache.highlight = nil
 				end
