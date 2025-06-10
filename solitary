@@ -12,8 +12,6 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz5
 
 local Menu = library.new("Trench war UI")
 
-local Main = Menu:CreateSection("Player")
-
 local states = {
 	SpawnRate = 200,
 	HitboxEnabled = false,
@@ -51,10 +49,6 @@ function GetGun(Name: string)
 
 	Player.Character:PivotTo(CFrame.new(Pos))
 end
-
-Main:CreateSlider("Walkspeed", 100, function(value)
-	Player.Character.Humanoid.WalkSpeed = value
-end)
 
 --
 
@@ -95,6 +89,10 @@ end)
 --
 
 local Server = Menu:CreateSection("Server")
+
+Server:CreateSlider("Walkspeed", 100, function(value)
+	Player.Character.Humanoid.WalkSpeed = value
+end)
 
 Server:CreateButton("Kill all", function()
 	for i, player in pairs(Players:GetPlayers()) do
@@ -302,7 +300,7 @@ task.spawn(function()
 		
 		if states.SpamMortar then
 			if Player.Character:FindFirstChild("Mortar") then
-				Player.Character.Mortar.Event:RemoteEvent(Player:GetMouse().Hit.Position)
+				Player.Character.Mortar.RemoteEvent:RemoteEvent(Player:GetMouse().Hit.Position)
 			end
 		end
 
