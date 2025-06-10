@@ -27,6 +27,7 @@ local states = {
 	HealTroll = false,
 	DmgTroll = false,
 	KillTroll = false,
+	SpamMortar = false,
 }
 
 function DamagePlayer(Target: Player, Amount: number)
@@ -39,47 +40,56 @@ function DamagePlayer(Target: Player, Amount: number)
 	end
 end
 
-Main:CreateSlider("Damage mutliplier", 100, function(value)
-	states.Multiplier = value
-end)
+function GetGun(Name: string)
+	local Character = Player.Character
+	local Pos = Character.PrimaryPart.Position
+
+	while not Player.Backpack:FindFirstChild("Sniper") do
+		GameEvent:FireServer("Spawn", {[2] = Pos})
+		if Player.Backpack:WaitForChild("Sniper", states.SpawnRate / 1000) then break end
+	end
+
+	Player.Character:PivotTo(CFrame.new(Pos))
+end
 
 Main:CreateSlider("Walkspeed", 100, function(value)
 	Player.Character.Humanoid.WalkSpeed = value
 end)
 
-Main:CreateButton("Grenade test", function()
-	local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+--
 
-	if tool and tool:FindFirstChild("RemoteEvent") then
-		tool.RemoteEvent:FireServer(Vector3.new(50, 100, math.random(-50, 50)) * 10000)
-	end
+local Guns = Menu:CreateSection("Guns")
+
+Guns:CreateSlider("Damage mutliplier", 100, function(value)
+	states.Multiplier = value
 end)
 
-Main:CreateSlider("Spawn rate (ms)", 2000, function(value)
+Guns:CreateSlider("Spawn rate (ms)", 2000, function(value)
 	states.SpawnRate = value
 end)
 
-Main:CreateButton("Get sniper", function()
-	local Character = Player.Character
-	local Pos = Character.PrimaryPart.Position
-	
-	while not Player.Backpack:FindFirstChild("Sniper") do
-		local p = game.Players.LocalPlayer.Backpack
-		for i,v in ipairs(p:GetChildren()) do
-			print(v.Name, v.Name == "Sniper")
-			
-			if v.Name == "Sniper" then
-				print('Just do it')
-				break
-			end
-		end
-		
-		GameEvent:FireServer("Spawn", {[2] = Pos})
-		
-		if Player.Backpack:WaitForChild("Sniper", states.SpawnRate / 1000) then break end
-	end
-	
-	Player.Character:PivotTo(CFrame.new(Pos))
+Guns:CreateButton("Get sniper", function()
+	GetGun("Sniper")
+end)
+
+Guns:CreateButton("Get thompson", function()
+	GetGun("Thompson")
+end)
+
+Guns:CreateButton("Get MG", function()
+	GetGun("Machine Gun")
+end)
+
+Guns:CreateButton("Get mortar", function()
+	GetGun("Mortar")
+end)
+
+Guns:CreateButton("Get rifle", function()
+	GetGun("M1Garand")
+end)
+
+Guns:CreateToggle("Spam mortar", function(enabled)
+	states.SpamMortar = enabled
 end)
 
 --
@@ -292,6 +302,12 @@ task.spawn(function()
 			elseif states.DmgTroll then
 				local dmg = states.TrollTarget.Character.Humanoid.Health - 2
 				DamagePlayer(states.TrollTarget, dmg)
+			end
+		end
+		
+		if states.SpamMortar then
+			if Player.Character:FindFirstChild("Mortar") then
+				Player.Character.Mortar.Event:RemoteEvent(Player:GetMouse().Hit.Position)
 			end
 		end
 
