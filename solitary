@@ -1,0 +1,84 @@
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+print("test")
+
+local library = require(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+
+local Menu = library.new("Blues hub - v2")
+local Main = Menu:CreateSection("Main")
+
+local states = {
+	ESP = false;
+	DisplayNames = false;
+	ShowHealth = false;
+	AimbotEnabled = false;
+	AimbotKey = Enum.KeyCode.Unknown;
+}
+
+local Tracking = false
+
+function GetPlayer()
+	return false
+end
+
+Main:CreateTextLabel("ESP")
+
+Main:CreateToggle("ESP", function(enabled)
+	states.ESP = enabled
+end)
+
+Main:CreateToggle("Use display names", function(enabled)
+	states.DisplayNames = enabled
+end)
+
+Main:CreateToggle("Show health", function(enabled)
+	states.ShowHealth = enabled
+end)
+
+Main:CreateInput("ESP toggle key", Enum.KeyCode.Unknown, function()
+	states.ESP = not states.ESP
+end)
+
+Main:CreateInput("Test esp", Enum.KeyCode.F, print)
+
+Main:CreateSlider("R Value", 255, function(Value)
+	print("R value changed to", Value)
+end)
+
+Main:CreateTextLabel("Aimbot")
+
+Main:CreateToggle("Aimbot enabled", function(enabled)
+	states.AimbotEnabled = enabled
+end)
+
+Main:CreateSlider("Strength", 100, print)
+
+Main:CreateTextBox("String", "Print", print)
+
+Main:CreateInput("Aimbot hold key", Enum.KeyCode.LeftControl, function(key)
+	print(key)
+end)
+
+UserInputService.InputBegan:Connect(function(input)
+	if input.KeyCode == states.AimbotKey and states.AimbotEnabled then
+		Tracking = true
+	else
+		Tracking = false
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if Tracking then
+		local Target = GetPlayer()
+		local Aim = Target.Character:FindFirstChild("Head")
+		if Aim ~= nil then
+			workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Aim.CFrame.Position)
+		end
+	end
+end)
+
+local Test = Menu:CreateSection("Test")
+
+Test:CreateTextLabel("this is just a test")
+Test:CreateTextLabel("i want to make sure it works")
