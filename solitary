@@ -43,6 +43,10 @@ Main:CreateSlider("Damage mutliplier", 100, function(value)
 	states.Multiplier = value
 end)
 
+Main:CreateSlider("Walkspeed", 100, function(value)
+	Player.Character.Humanoid.WalkSpeed = value
+end)
+
 Main:CreateButton("Grenade test", function()
 	local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 
