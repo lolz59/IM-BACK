@@ -180,15 +180,11 @@ Hitbox:CreateSlider("Hitbox size", 100, function(value)
 	states.HitboxSize = 1 + value
 end)
 
---
-
-local ESP = Menu:CreateSection("ESP")
-
-ESP:CreateToggle("Nametags enabled", function(enabled)
+Hitbox:CreateToggle("Nametags enabled", function(enabled)
 	states.Nametags = enabled
 end)
 
-ESP:CreateToggle("Highlight enabled", function(enabled)
+Hitbox:CreateToggle("Highlight enabled", function(enabled)
 	states.Highlight = enabled
 end)
 
