@@ -67,6 +67,8 @@ Main:CreateButton("Get sniper", function()
 		GameEvent:FireServer("Spawn", {[2] = Pos})
 		Backpack:WaitForChild("Sniper", states.SpawnRate / 1000)
 	end
+	
+	Player.Character:PivotTo(CFrame.new(Pos))
 end)
 
 --
