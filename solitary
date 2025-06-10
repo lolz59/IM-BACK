@@ -280,8 +280,7 @@ task.spawn(function()
 		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
 			for i, player in pairs(Players:GetPlayers()) do
 				if player ~= Player and player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
-					local dmg = if states.DmgAll then player.Character.Humanoid.Health - 2
-						else -100
+					local dmg = if states.DmgAll then math.max(0, player.Character.Humanoid.Health - 2) else -100
 
 					DamagePlayer(player, dmg)
 				end
@@ -296,7 +295,7 @@ task.spawn(function()
 				local dmg = states.TrollTarget.Character.Humanoid.Health + 100
 				DamagePlayer(states.TrollTarget, dmg)
 			elseif states.DmgTroll then
-				local dmg = states.TrollTarget.Character.Humanoid.Health - 2
+				local dmg = math.max(0, states.TrollTarget.Character.Humanoid.Health - 2)
 				DamagePlayer(states.TrollTarget, dmg)
 			end
 		end
