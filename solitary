@@ -83,7 +83,7 @@ Guns:CreateButton("Get rifle", function()
 	GetGun("M1Garand")
 end)
 
-Guns:CreateToggle("Mortar aimbot", function(enabled)
+Guns:CreateToggle("Mortar aimbot (WIP)", function(enabled)
 	states.MortarAim = enabled
 end)
 
@@ -206,7 +206,7 @@ local espCache = {}
 RunService.RenderStepped:Connect(function()
 	if states.Rave and Player.Character then
 		local g = Players:GetPlayers()
-		local p: Player = Players[math.random(1, #Players)]
+		local p: Player = g[math.random(1, #g)]
 		
 		local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 
