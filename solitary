@@ -111,7 +111,6 @@ ESP:CreateTextBox("Username", "View", function(input: string)
 end)
 
 ESP:CreateButton("Stop viewing", function()
-	print("Check1")
 	CurrentlyViewing = nil
 	workspace.CurrentCamera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
 		or workspace.CurrentCamera
