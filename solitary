@@ -28,6 +28,7 @@ local states = {
 	MortarAim = false,
 	Rave = false,
 	RaveHeight = 200,
+	RaveHeal = 5,
 }
 
 function DamagePlayer(Target: Player, Amount: number)
@@ -90,6 +91,10 @@ end)
 
 Guns:CreateSlider("Rave height", 1000, function(value)
 	states.RaveHeight = value
+end)
+
+Guns:CreateSlider("Rave heal", 100, function(value)
+	states.RaveHeal = value
 end)
 
 Guns:CreateToggle("Rave", function(enabled)
@@ -219,7 +224,7 @@ RunService.RenderStepped:Connect(function()
 			local targetpos = p.Character.PrimaryPart.Position
 			local start = Vector3.new(0, states.RaveHeight, 0)
 			local length = (start - targetpos).Magnitude
-			tool.RemoteEvent:FireServer(p.Character.Humanoid, -1, {length, CFrame.new(start, targetpos) * CFrame.new(0, 0, -length / 2)})
+			tool.RemoteEvent:FireServer(p.Character.Humanoid, -states.RaveHeal, {length, CFrame.new(start, targetpos) * CFrame.new(0, 0, -length / 2)})
 		end
 	end
 	
