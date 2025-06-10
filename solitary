@@ -19,18 +19,20 @@ local states = {
 	HitboxSize = 2,
 	Nametags = false,
 	Highlight = false,
-	Multiplier = 1,
+	Multiplier = 0,
+	DmgAll = false,
+	HealAll = false,
 }
 
 Main:CreateSlider("Damage mutliplier", 100, function(value)
 	states.Multiplier = value
 end)
 
-Main:CreateToggle("Get sniper", function(enabled)
+Main:CreateButton("Get sniper", function()
 	local Character = Player.Character
 	
-	while (not Backpack:FindFirstChild("Sniper")) and enabled do
-		GameEvent:FireServer(GameEvent, "Spawn", Character.PrimaryPart.Position)
+	while not Backpack:FindFirstChild("Sniper") do
+		GameEvent:FireServer(GameEvent, "Spawn", {Character.PrimaryPart.Position})
 		task.wait(0.2)
 	end
 end)
@@ -53,45 +55,11 @@ Main:CreateButton("Kill all", function()
 end)
 
 Main:CreateToggle("Heal all", function(enabled)
-	while enabled do
-		for i, player in pairs(Players:GetPlayers()) do
-			if player ~= Player and Player.Character then
-				local tool = Player.Character:FindFirstChildWhichIsA("Tool")
-
-				if tool and tool:FindFirstChild("RemoteEvent") then
-					tool.RemoteEvent:FireServer(player.Character.Humanoid, -100, {
-						[1] = 203.83062744140625,
-						[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
-					})
-				else
-					warn("a")
-				end
-			end
-		end
-		
-		task.wait(0.2)
-	end
+	states.HealAll = enabled
 end)
 
 Main:CreateToggle("Damage all", function(enabled)
-	while enabled do
-		for i, player in pairs(Players:GetPlayers()) do
-			if player ~= Player and Player.Character then
-				local tool = Player.Character:FindFirstChildWhichIsA("Tool")
-
-				if tool and tool:FindFirstChild("RemoteEvent") then
-					local dmg = player.Character.Humanoid.Health - 2
-					
-					tool.RemoteEvent:FireServer(player.Character.Humanoid, dmg, {
-						[1] = 203.83062744140625,
-						[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
-					})
-				end
-			end
-		end
-
-		task.wait(0.2)
-	end
+	states.DmgAll = enabled
 end)
 
 --
@@ -241,6 +209,29 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
+task.spawn(function()
+	while true do
+		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
+			for i, player in pairs(Players:GetPlayers()) do
+				if player ~= Player and Player.Character then
+					local tool = Player.Character:FindFirstChildWhichIsA("Tool")
+
+					if tool and tool:FindFirstChild("RemoteEvent") then
+						local dmg = if states.DmgAll then player.Character.Humanoid.Health - 2
+							else -100
+
+						tool.RemoteEvent:FireServer(player.Character.Humanoid, dmg, {
+							[1] = 203.83062744140625,
+							[2] = CFrame.new(-45.51131820678711, 102.98486328125, -113.49867248535156) * CFrame.Angles(-math.pi, 1.5021963119506836, -math.pi)
+						})
+					end
+				end
+			end
+		end
+
+		task.wait(0.2)
+	end
+end)
 
 --
 
@@ -257,7 +248,7 @@ MT.__namecall = newcclosure(function(Remote, ...)
 			local Multiplier = tonumber(states.Multiplier)
 
 			if Multiplier ~= nil then
-				Args[2] = (Args[2] * Multiplier)
+				Args[2] *= Multiplier
 
 				Remote[Method](Remote, unpack(Args))
 			end
