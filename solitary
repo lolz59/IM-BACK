@@ -145,10 +145,9 @@ RunService.RenderStepped:Connect(function()
 				if states.Nametags then
 					if not espCache[enemy].billboard then
 						local bb = Instance.new("BillboardGui")
-						bb.Adornee = hrp
 						bb.AlwaysOnTop = true
 						bb.Size = UDim2.new(0, 100, 0, 20)
-						bb.StudsOffset = Vector3.new(0, 2, 0)
+						bb.StudsOffset = Vector3.new(0, 5, 0)
 
 						local label = Instance.new("TextLabel", bb)
 						label.Size = UDim2.new(1, 0, 1, 0)
@@ -158,10 +157,13 @@ RunService.RenderStepped:Connect(function()
 						label.TextStrokeTransparency = 0
 						label.TextScaled = true
 						label.Font = Enum.Font.SourceSansBold
-
-						bb.Parent = hrp
+						
 						espCache[enemy].billboard = bb
 					end
+					
+					espCache[enemy].billboard.Adornee = hrp
+					espCache[enemy].billboard.Parent = character
+					
 				elseif espCache[enemy].billboard then
 					espCache[enemy].billboard:Destroy()
 					espCache[enemy].billboard = nil
@@ -174,10 +176,12 @@ RunService.RenderStepped:Connect(function()
 						hl.Name = "EnemyHighlight"
 						hl.FillTransparency = 1
 						hl.OutlineColor = Color3.new(1, 0, 0)
-						hl.Adornee = character
-						hl.Parent = character
 						espCache[enemy].highlight = hl
 					end
+					
+					espCache[enemy].highlight.Adornee = character
+					espCache[enemy].highlight.Parent = character
+					
 				elseif espCache[enemy].highlight then
 					espCache[enemy].highlight:Destroy()
 					espCache[enemy].highlight = nil
@@ -189,6 +193,10 @@ RunService.RenderStepped:Connect(function()
 					if espCache[enemy].billboard then espCache[enemy].billboard:Destroy() end
 					if espCache[enemy].highlight then espCache[enemy].highlight:Destroy() end
 					espCache[enemy] = nil
+				end
+				
+				if hrp then
+					hrp.Size = Vector3.one
 				end
 			end
 		end
