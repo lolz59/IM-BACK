@@ -15,12 +15,13 @@ local Menu = library.new("Trench war UI")
 local Main = Menu:CreateSection("Main")
 
 local states = {
-	LoopDamage = false,
+	HitboxEnabled = false,
+	HitboxSize = 2,
 	Multiplier = 1,
 }
 
 Main:CreateSlider("Damage mutliplier", 100, function(value)
-	states.Multiplier = value
+	states.Multiplier = 2 + value
 end)
 
 Main:CreateButton("Get sniper", function()
@@ -53,6 +54,42 @@ Main:CreateButton("Goto", function()
 	Character:PivotTo(Nearest.CFrame)
 end)
 
+--
+
+local Hitbox = Menu:CreateSection("Hitbox")
+
+Hitbox:CreateToggle("Hitbox enabled", function(enabled)
+	states.HitboxEnabled = enabled
+	print(enabled)
+end)
+
+Hitbox:CreateSlider("Hitbox size", 100, function(value)
+	states.HitboxSize = 1 + value
+end)
+
+RunService.RenderStepped:Connect(function()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= Player and player.Team ~= Player.Team then
+			local character = player.Character
+			if character then
+				local hrp = character:FindFirstChild("HumanoidRootPart")
+				if hrp then
+					hrp.CanCollide = false
+
+					if states.HitboxEnabled then
+						hrp.Size = Vector3.one * states.HitboxSize
+						hrp.Transparency = 0.5
+					else
+						hrp.Size = Vector3.one * 2
+						hrp.Transparency = 1
+					end
+				end
+			end
+		end
+	end
+end)
+
+--
 local MT = getrawmetatable(game)
 local Old = MT.__namecall
 setreadonly(MT, false)
@@ -76,3 +113,4 @@ MT.__namecall = newcclosure(function(Remote, ...)
 	return Old(Remote, ...)
 end)
 setreadonly(MT, true)
+--]]
