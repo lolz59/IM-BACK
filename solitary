@@ -44,9 +44,9 @@ function GetGun(Name: string)
 	local Character = Player.Character
 	local Pos = Character.PrimaryPart.Position
 
-	while not Player.Backpack:FindFirstChild("Sniper") do
+	while not Player.Backpack:FindFirstChild(Name) do
 		GameEvent:FireServer("Spawn", {[2] = Pos})
-		if Player.Backpack:WaitForChild("Sniper", states.SpawnRate / 1000) then break end
+		if Player.Backpack:WaitForChild(Name, states.SpawnRate / 1000) then break end
 	end
 
 	Player.Character:PivotTo(CFrame.new(Pos))
