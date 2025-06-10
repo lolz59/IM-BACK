@@ -1,84 +1,57 @@
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-print("test")
+local Player = Players.LocalPlayer
+local Backpack = Player.Backpack
+
+local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Blues hub - v2")
+local Menu = library.new("Trench war UI")
+
 local Main = Menu:CreateSection("Main")
 
 local states = {
-	ESP = false;
-	DisplayNames = false;
-	ShowHealth = false;
-	AimbotEnabled = false;
-	AimbotKey = Enum.KeyCode.Unknown;
+	LoopDamage = false,
+	Multiplier = 1,
 }
 
-local Tracking = false
-
-function GetPlayer()
-	return false
-end
-
-Main:CreateTextLabel("ESP")
-
-Main:CreateToggle("ESP", function(enabled)
-	states.ESP = enabled
+Main:CreateSlider("Damage mutliplier", 100, function(value)
+	states.Multiplier = value
 end)
 
-Main:CreateToggle("Use display names", function(enabled)
-	states.DisplayNames = enabled
-end)
+Main:CreateButton("Get sniper", function()
+	local Character = Player.Character
 
-Main:CreateToggle("Show health", function(enabled)
-	states.ShowHealth = enabled
-end)
-
-Main:CreateInput("ESP toggle key", Enum.KeyCode.Unknown, function()
-	states.ESP = not states.ESP
-end)
-
-Main:CreateInput("Test esp", Enum.KeyCode.F, print)
-
-Main:CreateSlider("R Value", 255, function(Value)
-	print("R value changed to", Value)
-end)
-
-Main:CreateTextLabel("Aimbot")
-
-Main:CreateToggle("Aimbot enabled", function(enabled)
-	states.AimbotEnabled = enabled
-end)
-
-Main:CreateSlider("Strength", 100, print)
-
-Main:CreateTextBox("String", "Print", print)
-
-Main:CreateInput("Aimbot hold key", Enum.KeyCode.LeftControl, function(key)
-	print(key)
-end)
-
-UserInputService.InputBegan:Connect(function(input)
-	if input.KeyCode == states.AimbotKey and states.AimbotEnabled then
-		Tracking = true
-	else
-		Tracking = false
+	if Character and Character.PrimaryPart then
+		GameEvent:FireServer(GameEvent, "Spawn", Character.PrimaryPart.Position)
+		task.wait(1)
 	end
 end)
 
-RunService.RenderStepped:Connect(function()
-	if Tracking then
-		local Target = GetPlayer()
-		local Aim = Target.Character:FindFirstChild("Head")
-		if Aim ~= nil then
-			workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Aim.CFrame.Position)
+local MT = getrawmetatable(game)
+local Old = MT.__namecall
+setreadonly(MT, false)
+
+MT.__namecall = newcclosure(function(Remote, ...) 
+	local Args = {...}
+	local Method = getnamecallmethod()
+
+	if Remote.Name == "RemoteEvent" and Method == "FireServer" then
+		if Args[2] ~= nil and typeof(Args[2]) == "number" then
+			local Multiplier = tonumber(_G["__Multiplier"])
+
+			if Multiplier ~= nil then
+				Args[2] = (Args[2] * _G["__Multiplier"])
+
+				Remote[Method](Remote, unpack(Args))
+			end
 		end
 	end
+
+	return Old(Remote, ...)
 end)
-
-local Test = Menu:CreateSection("Test")
-
-Test:CreateTextLabel("this is just a test")
-Test:CreateTextLabel("i want to make sure it works")
+setreadonly(MT, true)
