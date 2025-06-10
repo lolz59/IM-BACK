@@ -121,39 +121,29 @@ end)
 local espCache = {}
 RunService.RenderStepped:Connect(function()
 	for _, enemy in ipairs(Players:GetPlayers()) do
-		if enemy ~= Player and Player.Team ~= enemy.Team then
+		if enemy ~= Player and enemy.Team ~= Player.Team then
 			local character = enemy.Character
-			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+			local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+			local hrp = character and character:FindFirstChild("HumanoidRootPart")
 
-			-- Proceed only if the enemy has a Humanoid and is alive
-			if character and humanoid and humanoid.Health > 0 then
-				local hrp = character:FindFirstChild("HumanoidRootPart")
-				if hrp then
+			if character and humanoid and humanoid.Health > 0 and hrp then
+				-- Hitbox
+				if states.HitboxEnabled then
+					hrp.Size = Vector3.one * states.HitboxSize
+					hrp.Transparency = 0.5
 					hrp.CanCollide = false
-
-					-- Hitbox
-					if states.HitboxEnabled then
-						hrp.Size = Vector3.one * states.HitboxSize
-						hrp.Transparency = 0.5
-					else
-						hrp.Size = Vector3.one * 2
-						hrp.Transparency = 1
-					end
+				else
+					hrp.Size = Vector3.one * 2
+					hrp.Transparency = 1
+					hrp.CanCollide = false
 				end
 
-				-- ESP Cache init
-				if not espCache[enemy] then
-					espCache[enemy] = {
-						billboard = nil,
-						highlight = nil,
-					}
-				end
-
-				local cache = espCache[enemy]
+				-- ESP cache setup
+				espCache[enemy] = espCache[enemy] or {}
 
 				-- Nametag
-				if states.Nametags and hrp then
-					if not cache.billboard then
+				if states.Nametags then
+					if not espCache[enemy].billboard then
 						local bb = Instance.new("BillboardGui")
 						bb.Adornee = hrp
 						bb.AlwaysOnTop = true
@@ -170,43 +160,37 @@ RunService.RenderStepped:Connect(function()
 						label.Font = Enum.Font.SourceSansBold
 
 						bb.Parent = hrp
-						cache.billboard = bb
+						espCache[enemy].billboard = bb
 					end
-				elseif cache.billboard then
-					cache.billboard:Destroy()
-					cache.billboard = nil
+				elseif espCache[enemy].billboard then
+					espCache[enemy].billboard:Destroy()
+					espCache[enemy].billboard = nil
 				end
 
 				-- Highlight
 				if states.Highlight then
-					if not cache.highlight then
+					if not espCache[enemy].highlight then
 						local hl = Instance.new("Highlight")
 						hl.Name = "EnemyHighlight"
 						hl.FillTransparency = 1
 						hl.OutlineColor = Color3.new(1, 0, 0)
 						hl.Adornee = character
 						hl.Parent = character
-						cache.highlight = hl
+						espCache[enemy].highlight = hl
 					end
-				elseif cache.highlight then
-					cache.highlight:Destroy()
-					cache.highlight = nil
+				elseif espCache[enemy].highlight then
+					espCache[enemy].highlight:Destroy()
+					espCache[enemy].highlight = nil
 				end
+
 			else
-				-- Cleanup if player is dead
+				-- Cleanup if dead or missing parts
 				if espCache[enemy] then
-					local cache = espCache[enemy]
-					if cache.billboard then cache.billboard:Destroy() end
-					if cache.highlight then cache.highlight:Destroy() end
+					if espCache[enemy].billboard then espCache[enemy].billboard:Destroy() end
+					if espCache[enemy].highlight then espCache[enemy].highlight:Destroy() end
 					espCache[enemy] = nil
 				end
 			end
-		elseif espCache[enemy] then
-			-- Cleanup if not on enemy team
-			local cache = espCache[enemy]
-			if cache.billboard then cache.billboard:Destroy() end
-			if cache.highlight then cache.highlight:Destroy() end
-			espCache[enemy] = nil
 		end
 	end
 end)
