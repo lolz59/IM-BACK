@@ -267,7 +267,7 @@ RunService.RenderStepped:Connect(function()
 					
 					espCache[enemy].billboard.Adornee = hrp
 					espCache[enemy].billboard.Parent = character
-					espCache[enemy].billboard.label.Text = enemy.DisplayName .. " | " .. humanoid.Health .. " HP"
+					espCache[enemy].billboard.label.Text = enemy.DisplayName .. " | " .. math.round(humanoid.Health) .. " HP"
 										
 				elseif espCache[enemy].billboard then
 					espCache[enemy].billboard:Destroy()
