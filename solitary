@@ -109,7 +109,7 @@ Guns:CreateToggle("Grenade test", function(enabled)
 			local tool = Player.Backpack:WaitForChild("Grenade", 0.2)
 			
 			if tool and tool:FindFirstChildWhichIsA("RemoteEvent") then
-				task.wait(states.SpawnRate)
+				task.wait(states.SpawnRate / 1000)
 				Player.Character:WaitForChild("Humanoid"):EquipTool(tool)
 				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
 			end
