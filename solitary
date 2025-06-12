@@ -13,29 +13,31 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz5
 local Menu = library.new("Trench war UI")
 
 local states = {
+	Multiplier = 0,
 	SpawnRate = 200,
+	
 	HitboxEnabled = false,
 	HitboxSize = 2,
 	Nametags = false,
 	Highlight = false,
-	Multiplier = 0,
+	
 	DmgAll = false,
 	HealAll = false,
+	
 	TrollTarget = nil,
 	HealTroll = false,
 	DmgTroll = false,
 	KillTroll = false,
+	
+	SpamGrenade = false,
 	MortarAim = false,
-	Rave = false,
-	RaveHeight = 200,
-	RaveHeal = 5,
 }
 
 function DamagePlayer(Target: Player, Amount: number)
 	if Target.Character and Target.Character:FindFirstChildWhichIsA("Humanoid") then
 		local tool = Player.Character:FindFirstChildWhichIsA("Tool")
 		
-		if tool and tool:FindFirstChild("RemoteEvent") then
+		if tool and tool:FindFirstChild("RemoteEvent") and tool.Name ~= "Mortar" then
 			tool.RemoteEvent:FireServer(Target.Character.Humanoid, Amount, {1, CFrame.new()})
 		end
 	end
@@ -89,16 +91,30 @@ Guns:CreateToggle("Mortar aimbot (WIP)", function(enabled)
 	states.MortarAim = enabled
 end)
 
-Guns:CreateSlider("Rave height", 1000, function(value)
-	states.RaveHeight = value
-end)
+Guns:CreateToggle("Grenade test", function(enabled)
+	states.SpamGrenade = enabled
+	
+	local Character = Player.Character
 
-Guns:CreateSlider("Rave heal", 100, function(value)
-	states.RaveHeal = value
-end)
+	if Character and enabled then
+		local spampos = Character.PrimaryPart.Position
 
-Guns:CreateToggle("Rave", function(enabled)
-	states.Rave = enabled
+		while states.SpamGrenade do
+			local char = Player.Character
+			GameEvent:FireServer("Spawn", {[2] = spampos})
+			if char == Player.Character then Player.CharacterAdded:Wait() end
+
+			local tool = Backpack:WaitForChild("Grenade", 0.5)
+
+			if tool and tool:FindFirstChild("RemoteEvent") then
+				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
+			else
+				continue
+			end
+			
+			task.wait()
+		end
+	end
 end)
 
 --
@@ -122,6 +138,7 @@ Server:CreateToggle("Heal all", function(enabled)
 end)
 
 Server:CreateToggle("Damage all", function(enabled)
+	states.Multiplier = 0
 	states.DmgAll = enabled
 end)
 
@@ -166,14 +183,6 @@ end)
 
 Target:CreateButton("View target", function()
 	if states.TrollTarget then
-		for i = 1, 100  do
-			GameEvent:FireServer("BanHacker", {states.TrollTarget})
-		end
-	end
-end)
-
-Target:CreateButton("View target", function()
-	if states.TrollTarget then
 		local char = states.TrollTarget.Character
 		if char then
 			local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
@@ -214,19 +223,6 @@ end)
 local espCache = {}
 
 RunService.RenderStepped:Connect(function()
-	if states.Rave and Player.Character then
-		local p: Player = states.TrollTarget or Players:GetPlayers()[math.random(1, #Players:GetPlayers())]
-		
-		local tool = Player.Character:FindFirstChildWhichIsA("Tool")
-
-		if tool and tool:FindFirstChild("RemoteEvent") and p.Character then
-			local targetpos = p.Character.PrimaryPart.Position
-			local start = Vector3.new(0, states.RaveHeight, 0)
-			local length = (start - targetpos).Magnitude
-			tool.RemoteEvent:FireServer(p.Character.Humanoid, -states.RaveHeal, {length, CFrame.new(start, targetpos) * CFrame.new(-length / 2, 0, 0)})
-		end
-	end
-	
 	for _, enemy in ipairs(Players:GetPlayers()) do
 		if enemy ~= Player and enemy.Team ~= Player.Team then
 			local character = enemy.Character
@@ -253,13 +249,13 @@ RunService.RenderStepped:Connect(function()
 					if not espCache[enemy].billboard then
 						local bb = Instance.new("BillboardGui")
 						bb.AlwaysOnTop = true
-						bb.Size = UDim2.new(0, 100, 0, 20)
-						bb.StudsOffset = Vector3.new(0, 5, 0)
+						bb.Size = UDim2.new(0, 200, 0, 20)
+						bb.SizeOffset = Vector2.new(0, 3)
 
 						local label = Instance.new("TextLabel", bb)
 						label.Size = UDim2.new(1, 0, 1, 0)
 						label.BackgroundTransparency = 1
-						label.Text = enemy.DisplayName
+						label.Text = enemy.DisplayName .. " | " .. humanoid.Health .. " HP"
 						label.TextColor3 = Color3.new(1, 0, 0)
 						label.TextStrokeTransparency = 0
 						label.TextScaled = true
@@ -315,7 +311,7 @@ task.spawn(function()
 		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
 			for i, player in pairs(Players:GetPlayers()) do
 				if player ~= Player and player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
-					local dmg = if states.DmgAll then math.max(0, player.Character.Humanoid.Health - 2) else -100
+					local dmg = if states.DmgAll then math.max(0, player.Character.Humanoid.Health - 5) else -100
 
 					DamagePlayer(player, dmg)
 				end
@@ -342,6 +338,31 @@ task.spawn(function()
 		end
 
 		task.wait(0.2)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		if states.SpamGrenade then
+			local Character = Player.Character
+			
+			if Character then
+				local spampos = Character.PrimaryPart.Position
+				
+				while states.SpamGrenade do
+					GameEvent:FireServer("Spawn", {[2] = spampos})
+					
+					local tool = Backpack:WaitForChild("Grenade", 1)
+					if not tool then states.SpamGrenade = false break end
+
+					if tool:FindFirstChild("RemoteEvent") then
+						tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
+					end
+				end
+			end
+		else
+			task.wait()
+		end
 	end
 end)
 
