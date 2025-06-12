@@ -105,14 +105,13 @@ Guns:CreateToggle("Grenade test", function(enabled)
 			if char == Player.Character then Player.CharacterAdded:Wait() end
 
 			local tool = Backpack:WaitForChild("Grenade", 0.5)
-			print(tool:GetFullName())
 			
-			Player.Character:WaitForChild("Humanoid"):EquipTool(tool)
 			
 			if tool and tool:FindFirstChild("RemoteEvent") then
+				print(tool:GetFullName())
+
+				Player.Character:WaitForChild("Humanoid"):EquipTool(tool)
 				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
-			else
-				continue
 			end
 			
 			task.wait()
