@@ -108,8 +108,7 @@ Guns:CreateToggle("Grenade test", function(enabled)
 			
 			
 			if tool and tool:FindFirstChild("RemoteEvent") then
-				print(tool:GetFullName())
-
+				Player.Character:PivotTo(CFrame.new(spampos))
 				Player.Character:WaitForChild("Humanoid"):EquipTool(tool)
 				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
 			end
