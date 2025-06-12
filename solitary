@@ -102,15 +102,17 @@ Guns:CreateToggle("Grenade test", function(enabled)
 		while states.SpamGrenade do
 			local char = Player.Character
 			GameEvent:FireServer("Spawn", {[2] = spampos})
-			if char == Player.Character then Player.CharacterAdded:Wait() end
+			if char == Player.Character then print("just do") Player.CharacterAdded:Wait() end
 
-			local tool = Backpack:WaitForChild("Grenade", 0.5)
-			
+			local tool = Backpack:WaitForChild("Grenade", 0.2)
 			
 			if tool and tool:FindFirstChild("RemoteEvent") then
+				print("we work?")
 				Player.Character:PivotTo(CFrame.new(spampos))
 				Player.Character:WaitForChild("Humanoid"):EquipTool(tool)
 				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
+			else
+				print("why me")
 			end
 			
 			task.wait()
