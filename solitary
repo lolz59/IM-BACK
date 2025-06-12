@@ -105,7 +105,9 @@ Guns:CreateToggle("Grenade test", function(enabled)
 			if char == Player.Character then Player.CharacterAdded:Wait() end
 
 			local tool = Backpack:WaitForChild("Grenade", 0.5)
-
+			
+			Character:WaitForChild("Humanoid"):EquipTool(tool)
+			
 			if tool and tool:FindFirstChild("RemoteEvent") then
 				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
 			else
@@ -250,12 +252,12 @@ RunService.RenderStepped:Connect(function()
 						local bb = Instance.new("BillboardGui")
 						bb.AlwaysOnTop = true
 						bb.Size = UDim2.new(0, 200, 0, 20)
-						bb.SizeOffset = Vector2.new(0, 3)
+						bb.SizeOffset = Vector2.new(0, 1)
 
 						local label = Instance.new("TextLabel", bb)
+						label.Name = "label"
 						label.Size = UDim2.new(1, 0, 1, 0)
 						label.BackgroundTransparency = 1
-						label.Text = enemy.DisplayName .. " | " .. humanoid.Health .. " HP"
 						label.TextColor3 = Color3.new(1, 0, 0)
 						label.TextStrokeTransparency = 0
 						label.TextScaled = true
@@ -266,7 +268,8 @@ RunService.RenderStepped:Connect(function()
 					
 					espCache[enemy].billboard.Adornee = hrp
 					espCache[enemy].billboard.Parent = character
-					
+					espCache[enemy].billboard.label.Text = enemy.DisplayName .. " | " .. humanoid.Health .. " HP"
+										
 				elseif espCache[enemy].billboard then
 					espCache[enemy].billboard:Destroy()
 					espCache[enemy].billboard = nil
@@ -338,31 +341,6 @@ task.spawn(function()
 		end
 
 		task.wait(0.2)
-	end
-end)
-
-task.spawn(function()
-	while true do
-		if states.SpamGrenade then
-			local Character = Player.Character
-			
-			if Character then
-				local spampos = Character.PrimaryPart.Position
-				
-				while states.SpamGrenade do
-					GameEvent:FireServer("Spawn", {[2] = spampos})
-					
-					local tool = Backpack:WaitForChild("Grenade", 1)
-					if not tool then states.SpamGrenade = false break end
-
-					if tool:FindFirstChild("RemoteEvent") then
-						tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
-					end
-				end
-			end
-		else
-			task.wait()
-		end
 	end
 end)
 
