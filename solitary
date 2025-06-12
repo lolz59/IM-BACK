@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Trench war UI 605")
+local Menu = library.new("Trench war UI 620")
 
 local states = {
 	Multiplier = 0,
@@ -103,16 +103,18 @@ Guns:CreateToggle("Grenade test", function(enabled)
 			local char = Player.Character
 			GameEvent:FireServer("Spawn", {[2] = spampos})
 			if char == Player.Character then Player.CharacterAdded:Wait() end
+			
 			Player.Character:PivotTo(CFrame.new(spampos))
 
 			local tool = Player.Backpack:WaitForChild("Grenade", 0.2)
 			
 			if tool and tool:FindFirstChildWhichIsA("RemoteEvent") then
-				local remote = tool:FindFirstChildWhichIsA("RemoteEvent")
+				Player.Character:PivotTo(CFrame.new(spampos))
+				task.wait()
+				
 				Player.Character:WaitForChild("Humanoid"):EquipTool(tool)
 				tool.RemoteEvent:FireServer(Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)) * 10000)
 			end
-			task.wait()
 		end
 	end
 end)
