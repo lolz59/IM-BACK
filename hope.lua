@@ -22,7 +22,7 @@ while true do
 
 			for i, victim in ipairs(Players:GetPlayers()) do
 				if victim ~= Players.LocalPlayer and victim.Character then
-					local h = victim.Character:FindFirstChildWhichIsA()("Humanoid")
+					local h = victim.Character:FindFirstChildWhichIsA("Humanoid")
 					if h and h.Health > 0 then
 						local fakeHitInfo = {
 							part = victim.Character.Head,
