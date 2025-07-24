@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 2")
+local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
@@ -310,7 +310,20 @@ RunService.RenderStepped:Connect(function()
 	end
 	
 	if states.InfAmmo then
+		local Tool = Player.Character and Player.Character:FindFirstChildWhichIsA("Tool")
 		
+		if Tool and Tool.Name ~= "Mortar" then
+			local hisscript = Tool:FindFirstChild(Tool.Name .. "LocalScript")
+				or Tool:FindFirstChild("ThompsonLocalScript")
+			
+			if hisscript then
+				local environment = getsenv(hisscript)
+
+				for k, v in pairs(environment) do
+					print(k, v, "(" .. typeof(v) .. ")")
+				end
+			end
+		end
 	end
 	
 	for _, enemy in ipairs(Players:GetPlayers()) do
