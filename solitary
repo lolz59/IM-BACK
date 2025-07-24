@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 6")
+local Menu = library.new("Solitary UI 7")
 
 local states = {
 	Multiplier = 1,
@@ -399,13 +399,13 @@ end)
 
 --
 
-local function isVisible(from, to, ignoreList)
+local function isVisible(from, to, ignoreList, model)
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.FilterDescendantsInstances = ignoreList or {Player.Character}
 
 	local result = workspace.Raycast(workspace, from, (to - from).Unit * (to - from).Magnitude, rayParams)
-	return result == nil
+	return result and result.Instance:IsDescendantOf(model)
 end
 
 function getClosestTargetToScreenPos(screenPos)
@@ -420,7 +420,7 @@ function getClosestTargetToScreenPos(screenPos)
 		local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
 
 		if hrp and humanoid and humanoid.Health > 0 then
-			local worldToScreenPoint, onScreen = workspace.Camera.WorldToScreenPoint(workspace.Camera, hrp.Position)
+			local worldToScreenPoint, onScreen = workspace.Camera.WorldToViewportPoint(workspace.Camera, hrp.Position)
 			
 			if onScreen then
 				local dist = (Vector2.new(worldToScreenPoint.X, worldToScreenPoint.Y) - screenPos).Magnitude
@@ -466,7 +466,7 @@ mt.__namecall = newcclosure(function(self, ...)
 					local targetHumanoid = targetPlayer.Character:FindFirstChildWhichIsA("Humanoid")
 					local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-					if targetHumanoid and targetHRP and isVisible(origin, targetHRP.Position) then
+					if targetHumanoid and targetHRP and isVisible(origin, targetHRP.Position, targetPlayer.Character) then
 						local hitpos = targetHRP.Position
 						local distance = (origin - hitpos).Magnitude
 						local direction = CFrame.new(origin, hitpos) * CFrame.Angles(0, math.pi / 2, 0) * CFrame.new(distance / 2, 0, 0)
