@@ -10,14 +10,16 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI")
+local Menu = library.new("Solitary UI 2")
 
 local states = {
 	Multiplier = 1,
 	SpawnRate = 200,
 	DoWalkspeed = false,
 	WalkSpeed = 16,
+	
 	SilentAim = false,
+	FieldOfView = 100,
 	
 	HitboxEnabled = false,
 	HitboxSize = 8,
@@ -36,6 +38,16 @@ local states = {
 		
 	MortarAim = false,
 }
+
+local fov_circle = Drawing.new("Circle")
+fov_circle.Thickness = 1
+fov_circle.NumSides = 100
+fov_circle.Radius = 180
+fov_circle.Filled = false
+fov_circle.Visible = false
+fov_circle.ZIndex = 999
+fov_circle.Transparency = 1
+fov_circle.Color = Color3.fromRGB(54, 57, 241)
 
 function DamagePlayer(Target: Player, Amount: number)
 	if Target.Character and Target.Character:FindFirstChildWhichIsA("Humanoid") then
@@ -67,7 +79,7 @@ Guns:CreateSlider("Damage mutliplier", 100, states.Multiplier, 1, function(value
 	states.Multiplier = value
 end)
 
-Guns:CreateSlider("Spawn rate (ms)", 2000, 200, 10, function(value)
+Guns:CreateSlider("Spawn rate (ms)", 2000, states.SpawnRate, 10, function(value)
 	states.SpawnRate = value
 end)
 
@@ -77,6 +89,10 @@ end
 
 Guns:CreateToggle("Silent Aim", function(enabled)
 	states.SilentAim = enabled
+end)
+
+Guns:CreateSlider("Field of view", 1000, states.Multiplier, 10, function(value)
+	states.FieldOfView = value
 end)
 
 Guns:CreateToggle("Mortar aimbot (WIP)", function(enabled)
@@ -278,7 +294,14 @@ end
 
 -- main
 
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()	
+	fov_circle.Visible = states.SilentAim
+
+	if states.SilentAim then
+		fov_circle.Radius = states.FieldOfView
+		fov_circle.Position = UserInputService:GetMouseLocation()
+	end
+	
 	for _, enemy in ipairs(Players:GetPlayers()) do
 		if enemy == Player then continue end
 
@@ -374,15 +397,54 @@ end)
 
 --
 
+local function isVisible(from, to, ignoreList)
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.FilterDescendantsInstances = ignoreList or {Player.Character}
+
+	local result = workspace:Raycast(from, (to - from).Unit * (to - from).Magnitude, rayParams)
+	return result == nil or result.Instance:IsDescendantOf(Players:GetPlayerFromCharacter(to.Parent).Character)
+end
+
+function getClosestTargetToScreenPos(screenPos)
+	local closestPlayer, closestDist = nil, math.huge
+
+	for _, otherPlayer in ipairs(Players:GetPlayers()) do
+		if otherPlayer == Player then continue end
+		if otherPlayer.Team == Player.Team then continue end
+
+		local character = otherPlayer.Character
+		local hrp = character and character:FindFirstChild("HumanoidRootPart")
+		local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+
+		if hrp and humanoid and humanoid.Health > 0 then
+			local worldToScreenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(hrp.Position)
+			
+			if onScreen then
+				local dist = (Vector2.new(worldToScreenPoint.X, worldToScreenPoint.Y) - screenPos).Magnitude
+				if dist < closestDist and dist <= states.FieldOfView then
+					closestDist = dist
+					closestPlayer = otherPlayer
+				end
+			end
+		end
+	end
+
+	return closestPlayer
+end
+
+--
+
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt, false)
 
 mt.__namecall = newcclosure(function(self, ...)
-	local args = { ... }
 	local method = getnamecallmethod()
 
 	if method == "FireServer" and self.Name == "RemoteEvent" then
+		local args = { ... }
+		
 		if typeof(args[2]) == "number" then
 			local multiplier = tonumber(states.Multiplier)
 			
@@ -391,20 +453,36 @@ mt.__namecall = newcclosure(function(self, ...)
 			end
 			
 			if states.SilentAim then
-				local origin = Player.Character.PrimaryPart.Position + Vector3.new(0, 10, 0)
-				local hitpos = Vector3.new()
-				
-				local distance = (origin - hitpos).Magnitude
-				local direction = CFrame.new(origin, hitpos) * CFrame.Angles(0, math.pi/2, 0) * CFrame.new(distance / 2, 0, 0)
-				
-				args[3] = {distance, direction}
+				local Tool = Player.Character and Player.Character:FindFirstChildWhichIsA("Tool")
+				local Bpos = Tool and Tool:FindFirstChild("BPos")
+				if not Tool or not Bpos then return end
+
+				local origin = Bpos.Position
+				local targetPlayer = getClosestTargetToScreenPos(UserInputService:GetMouseLocation())
+
+				if targetPlayer then
+					local targetHumanoid = targetPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+					local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+					if targetHumanoid and targetHRP and isVisible(origin, targetHRP.Position) then
+						local hitpos = targetHRP.Position
+						local distance = (origin - hitpos).Magnitude
+						local direction = CFrame.new(origin, hitpos) * CFrame.Angles(0, math.pi / 2, 0) * CFrame.new(distance / 2, 0, 0)
+
+						args[1] = targetHumanoid
+						args[3] = {distance, direction}
+						
+						print("Wow!")
+					end
+				end
 			end
 			
 			return old(self, unpack(args))
 		elseif typeof(args[1]) == "Vector3" and self.Parent and self.Parent.Name == "Mortar" then
 			--args[1] *= multiplier
-			return old(self, unpack(args))
 		end
+		
+		return old(self, unpack(args))
 	end
 
 	return old(self, ...)
