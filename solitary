@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 7")
+local Menu = library.new("Solitary UI 8")
 
 local states = {
 	Multiplier = 1,
@@ -455,7 +455,7 @@ mt.__namecall = newcclosure(function(self, ...)
 			end
 			
 			if states.SilentAim then
-				local Tool = Player.Character and Player.Character:FindFirstChildWhichIsA(Player.Character"Tool")
+				local Tool = Player.Character and Player.Character:FindFirstChildWhichIsA("Tool")
 				local Bpos = Tool and Tool:FindFirstChild("BPos")
 				if not Tool or not Bpos then return end
 
