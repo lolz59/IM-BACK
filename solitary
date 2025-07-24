@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 5")
+local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
@@ -466,7 +466,7 @@ mt.__namecall = newcclosure(function(self, ...)
 					local targetHumanoid = targetPlayer.Character:FindFirstChildWhichIsA("Humanoid")
 					local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-					if targetHumanoid and targetHRP and isVisible(origin, targetHRP.Position, targetPlayer.Character) then
+					if targetHumanoid and targetHRP and isVisible(origin, targetHRP.Position, nil, targetPlayer.Character) then
 						local hitpos = targetHRP.Position
 						local distance = (origin - hitpos).Magnitude
 						local direction = CFrame.new(origin, hitpos) * CFrame.Angles(0, math.pi / 2, 0) * CFrame.new(distance / 2, 0, 0)
