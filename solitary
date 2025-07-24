@@ -10,14 +10,16 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Trench war UI 650")
+local Menu = library.new("Solitary UI")
 
 local states = {
-	Multiplier = 0,
+	Multiplier = 1,
 	SpawnRate = 200,
+	WalkSpeed = 16,
+	SilentAim = false,
 	
 	HitboxEnabled = false,
-	HitboxSize = 2,
+	HitboxSize = 8,
 	Nametags = false,
 	Highlight = false,
 	
@@ -25,14 +27,12 @@ local states = {
 	HealAll = false,
 	
 	TrollTarget = nil,
+	Viewing = nil,
+	
 	HealTroll = false,
 	DmgTroll = false,
 	KillTroll = false,
-	
-	SpamGrenade = false,
-	GrenadePos = nil,
-	GrenadePower = 10_000,
-	
+		
 	MortarAim = false,
 }
 
@@ -62,75 +62,48 @@ end
 
 local Guns = Menu:CreateSection("Guns")
 
-Guns:CreateSlider("Damage mutliplier", 100, function(value)
+Guns:CreateSlider("Damage mutliplier", 100, states.Multiplier, 1, function(value)
 	states.Multiplier = value
 end)
 
-Guns:CreateSlider("Spawn rate (ms)", 2000, function(value)
-	states.SpawnRate = value
-end)
-
-Guns:CreateButton("Get sniper", function()
-	GetGun("Sniper")
-end)
-
-Guns:CreateButton("Get thompson", function()
-	GetGun("Thompson")
-end)
-
-Guns:CreateButton("Get MG", function()
-	GetGun("Machine Gun")
-end)
-
-Guns:CreateButton("Get mortar", function()
-	GetGun("Mortar")
-end)
-
-Guns:CreateButton("Get rifle", function()
-	GetGun("M1Garand")
-end)
+for _, name in ipairs({"Sniper", "Thompson", "Machine Gun", "Mortar", "M1Garand"}) do
+	Guns:CreateButton("Get " .. name, function() GetGun(name) end)
+end
 
 Guns:CreateToggle("Mortar aimbot (WIP)", function(enabled)
 	states.MortarAim = enabled
 end)
 
-Guns:CreateToggle("Grenade test", function(enabled)
-	states.SpamGrenade = enabled
-	
-	local Character = Player.Character
+--
 
-	if Character and enabled then
-		states.GrenadePos = Character.PrimaryPart.Position
+local Deploy = Menu:CreateSection("Deploy")
 
-		while states.SpamGrenade do
-			local char = Player.Character
-			GameEvent:FireServer("Spawn", {[2] = states.GrenadePos})
-			if char == Player.Character then char = Player.CharacterAdded:Wait() end
+local spawnPoints = {
+	["Axis"] = -800,
+	["A"] = -500,
+	["B"] = -250,
+	["C"] = 0,
+	["D"] = 250,
+	["E"] = 500,
+	["Allies"] = 800
+}
 
-			local tool = Player.Backpack:FindFirstChild("Grenade") or Player.Backpack:WaitForChild("Grenade", 0.2)
-			
-			if tool and tool:FindFirstChildWhichIsA("RemoteEvent") and char:FindFirstChild("Humanoid") then
-				if states.SpawnRate ~= 0 then
-					task.wait(states.SpawnRate / 1000)
-				end
-				
-				char.Humanoid:EquipTool(tool)
-				tool.RemoteEvent:FireServer(Vector3.new(math.random(-100, 100), 0, 0) * states.GrenadePower)
-			end
-		end
-	end
-end)
+local function trySpawn(arg1)	
+	GameEvent:FireServer("Spawn", {nil, Vector3.new(math.random(-163, 163), 90, spawnPoints[arg1])})
+end
 
-Guns:CreateSlider("Power", 20000, function(value)
-	states.GrenadePower = value
-end)
+for name in pairs(spawnPoints) do
+	Deploy:CreateButton(name, function()
+		trySpawn(name)
+	end)
+end
 
 --
 
 local Server = Menu:CreateSection("Server")
 
-Server:CreateSlider("Walkspeed", 100, function(value)
-	Player.Character.Humanoid.WalkSpeed = value
+Server:CreateSlider("Walkspeed", 100, states.WalkSpeed, 1, function(value)
+	states.WalkSpeed = value
 end)
 
 Server:CreateButton("Kill all", function()
@@ -160,9 +133,11 @@ Target:CreateTextBox("Username", "Target", function(input)
 	local inputLower = input:lower()
 	local matchedPlayer = nil
 
-	-- Search for the first player whose name starts with the input
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= Player and player.Name:lower():sub(1, #inputLower) == inputLower then
+		local usernameMatch = player.Name:lower():sub(1, #inputLower) == inputLower
+		local displayNameMatch = player.DisplayName:lower():sub(1, #inputLower) == inputLower
+
+		if player ~= Player and (usernameMatch or displayNameMatch) then
 			matchedPlayer = player
 			break
 		end
@@ -191,17 +166,13 @@ end)
 
 Target:CreateButton("View target", function()
 	if states.TrollTarget then
-		local char = states.TrollTarget.Character
-		if char then
-			local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
-			if hrp then
-				workspace.CurrentCamera.CameraSubject = hrp
-			end
-		end
+		states.Viewing = states.TrollTarget
 	end
 end)
 
 Target:CreateButton("Stop viewing", function()
+	states.Viewing = nil
+	
 	workspace.CurrentCamera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
 		or workspace.CurrentCamera
 end)
@@ -214,7 +185,7 @@ Hitbox:CreateToggle("Hitbox enabled", function(enabled)
 	states.HitboxEnabled = enabled
 end)
 
-Hitbox:CreateSlider("Hitbox size", 100, function(value)
+Hitbox:CreateSlider("Hitbox size", 100, states.HitboxSize, 1, function(value)
 	states.HitboxSize = 1 + value
 end)
 
@@ -230,125 +201,157 @@ end)
 
 local espCache = {}
 
-RunService.RenderStepped:Connect(function()
-	if states.SpamGrenade and Player.Character then
-		Player.Character:PivotTo(CFrame.new(states.GrenadePos))
+local function destroyESP(player)
+	local cache = espCache[player]
+	if not cache then return end
+
+	if cache.billboard then cache.billboard:Destroy() end
+	if cache.highlight then cache.highlight:Destroy() end
+
+	espCache[player] = nil
+end
+
+local function updateHitbox(hrp)
+	if states.HitboxEnabled then
+		hrp.Size = Vector3.one * states.HitboxSize
+		hrp.Transparency = 0.5
+	else
+		hrp.Size = Vector3.one * 2
+		hrp.Transparency = 1
 	end
-	
+	hrp.CanCollide = false
+end
+
+local function createNametag(player, hrp, humanoid)
+	local cache = espCache[player]
+	if not cache.billboard then
+		local bb = Instance.new("BillboardGui")
+		bb.Name = "EnemyNametag"
+		bb.AlwaysOnTop = true
+		bb.Size = UDim2.new(0, 200, 0, 20)
+		bb.SizeOffset = Vector2.new(0, 1)
+
+		local label = Instance.new("TextLabel")
+		label.Name = "Label"
+		label.Size = UDim2.new(1, 0, 1, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.new(1, 0, 0)
+		label.TextStrokeTransparency = 0
+		label.TextScaled = true
+		label.Font = Enum.Font.SourceSansBold
+		label.Parent = bb
+
+		cache.billboard = bb
+	end
+
+	cache.billboard.Adornee = hrp
+	cache.billboard.Parent = hrp
+	cache.billboard.Label.Text = player.DisplayName .. " | " .. math.round(humanoid.Health) .. " HP"
+end
+
+local function createHighlight(player, character)
+	local cache = espCache[player]
+	if not cache.highlight then
+		local hl = Instance.new("Highlight")
+		hl.Name = "EnemyHighlight"
+		hl.FillTransparency = 1
+		hl.OutlineColor = Color3.new(1, 0, 0)
+		cache.highlight = hl
+	end
+
+	cache.highlight.Adornee = character
+	cache.highlight.Parent = character
+end
+
+-- main
+
+RunService.RenderStepped:Connect(function()
 	for _, enemy in ipairs(Players:GetPlayers()) do
-		if enemy ~= Player and enemy.Team ~= Player.Team then
-			local character = enemy.Character
-			local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
-			local hrp = character and character:FindFirstChild("HumanoidRootPart")
+		if enemy == Player then continue end
 
-			if character and humanoid and humanoid.Health > 0 and hrp then
-				-- Hitbox
-				if states.HitboxEnabled then
-					hrp.Size = Vector3.one * states.HitboxSize
-					hrp.Transparency = 0.5
-					hrp.CanCollide = false
-				else
-					hrp.Size = Vector3.one * 2
-					hrp.Transparency = 1
-					hrp.CanCollide = false
-				end
+		local character = enemy.Character
+		local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+		local hrp = character and character:FindFirstChild("HumanoidRootPart")
 
-				-- ESP cache setup
-				espCache[enemy] = espCache[enemy] or {}
+		local isEnemy = enemy.Team ~= Player.Team
+		local isAlive = humanoid and humanoid.Health > 0
 
-				-- Nametag
-				if states.Nametags then
-					if not espCache[enemy].billboard then
-						local bb = Instance.new("BillboardGui")
-						bb.AlwaysOnTop = true
-						bb.Size = UDim2.new(0, 200, 0, 20)
-						bb.SizeOffset = Vector2.new(0, 1)
+		espCache[enemy] = espCache[enemy] or {}
 
-						local label = Instance.new("TextLabel", bb)
-						label.Name = "label"
-						label.Size = UDim2.new(1, 0, 1, 0)
-						label.BackgroundTransparency = 1
-						label.TextColor3 = Color3.new(1, 0, 0)
-						label.TextStrokeTransparency = 0
-						label.TextScaled = true
-						label.Font = Enum.Font.SourceSansBold
-						
-						espCache[enemy].billboard = bb
-					end
-					
-					espCache[enemy].billboard.Adornee = hrp
-					espCache[enemy].billboard.Parent = character
-					espCache[enemy].billboard.label.Text = enemy.DisplayName .. " | " .. math.round(humanoid.Health) .. " HP"
-										
-				elseif espCache[enemy].billboard then
+		if isEnemy and character and humanoid and hrp and isAlive then
+			updateHitbox(hrp)
+
+			if states.Nametags then
+				createNametag(enemy, hrp, humanoid)
+			else
+				if espCache[enemy].billboard then
 					espCache[enemy].billboard:Destroy()
 					espCache[enemy].billboard = nil
 				end
+			end
 
-				-- Highlight
-				if states.Highlight then
-					if not espCache[enemy].highlight then
-						local hl = Instance.new("Highlight")
-						hl.Name = "EnemyHighlight"
-						hl.FillTransparency = 1
-						hl.OutlineColor = Color3.new(1, 0, 0)
-						espCache[enemy].highlight = hl
-					end
-					
-					espCache[enemy].highlight.Adornee = character
-					espCache[enemy].highlight.Parent = character
-					
-				elseif espCache[enemy].highlight then
+			if states.Highlight then
+				createHighlight(enemy, character)
+			else
+				if espCache[enemy].highlight then
 					espCache[enemy].highlight:Destroy()
 					espCache[enemy].highlight = nil
 				end
+			end
 
-			else
-				-- Cleanup if dead or missing parts
-				if espCache[enemy] then
-					if espCache[enemy].billboard then espCache[enemy].billboard:Destroy() end
-					if espCache[enemy].highlight then espCache[enemy].highlight:Destroy() end
-					espCache[enemy] = nil
-				end
-				
-				if hrp then
-					hrp.Size = Vector3.one
-				end
+		else
+			destroyESP(enemy)
+			if hrp then
+				hrp.Size = Vector3.one
+				hrp.Transparency = 1
 			end
 		end
 	end
+	
+	if Player.Character then
+		Player.Character.Humanoid.WalkSpeed = states.WalkSpeed
+	end
 end)
+
+--
 
 task.spawn(function()
 	while true do
-		if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
-			for i, player in pairs(Players:GetPlayers()) do
-				if player ~= Player and player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
-					local dmg = if states.DmgAll then math.max(0, player.Character.Humanoid.Health - 5) else -100
+		local succ, res = pcall(function()
+			if states.DmgAll or states.HealAll and not (states.DmgAll and states.HealAll) then
+				for i, player in pairs(Players:GetPlayers()) do
+					if player ~= Player and player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
+						local dmg = if states.DmgAll then math.max(0, player.Character.Humanoid.Health - 5) else -100
 
-					DamagePlayer(player, dmg)
+						DamagePlayer(player, dmg)
+					end
 				end
 			end
-		end
-		
-		if states.TrollTarget and states.TrollTarget.Character then
-			if states.HealTroll then
-				local dmg = -100
-				DamagePlayer(states.TrollTarget, dmg)
-			elseif states.KillTroll then
-				local dmg = states.TrollTarget.Character.Humanoid.Health + 100
-				DamagePlayer(states.TrollTarget, dmg)
-			elseif states.DmgTroll then
-				local dmg = math.max(0, states.TrollTarget.Character.Humanoid.Health - 2)
-				DamagePlayer(states.TrollTarget, dmg)
+
+			if states.TrollTarget and states.TrollTarget.Character then
+				local char = states.TrollTarget.Character
+
+				if char then
+					local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+					if hrp then
+						workspace.CurrentCamera.CameraSubject = hrp
+					end
+				end
+
+				if states.HealTroll then
+					local dmg = -100
+					DamagePlayer(states.TrollTarget, dmg)
+				elseif states.KillTroll then
+					local dmg = states.TrollTarget.Character.Humanoid.Health + 100
+					DamagePlayer(states.TrollTarget, dmg)
+				elseif states.DmgTroll then
+					local dmg = math.max(0, states.TrollTarget.Character.Humanoid.Health - 2)
+					DamagePlayer(states.TrollTarget, dmg)
+				end
 			end
-		end
+		end)
 		
-		if states.MortarAim then
-			if Player.Character:FindFirstChild("Mortar") then
-				Player.Character.Mortar.RemoteEvent:FireServer(Player:GetMouse().Hit.Position)
-			end
-		end
+		if not succ then warn("354: " ..res) end
 
 		task.wait(0.2)
 	end
@@ -356,27 +359,42 @@ end)
 
 --
 
-local MT = getrawmetatable(game)
-local Old = MT.__namecall
-setreadonly(MT, false)
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
 
-MT.__namecall = newcclosure(function(Remote, ...) 
-	local Args = {...}
-	local Method = getnamecallmethod()
+mt.__namecall = newcclosure(function(self, ...)
+	local args = { ... }
+	local method = getnamecallmethod()
 
-	if Remote.Name == "RemoteEvent" and Method == "FireServer" then
-		if Args[2] ~= nil and typeof(Args[2]) == "number" then
-			local Multiplier = tonumber(states.Multiplier)
-
-			if Multiplier ~= nil then
-				Args[2] *= Multiplier
-
-				Remote[Method](Remote, unpack(Args))
+	if method == "FireServer" and self.Name == "RemoteEvent" then
+		if typeof(args[2]) == "number" then
+			local multiplier = tonumber(states.Multiplier)
+			
+			if multiplier then
+				args[2] *= multiplier
 			end
+			
+			if states.SilentAim then
+				local origin = Player.Character.PrimaryPart.Position + Vector3.new(0, 10, 0)
+				local hitpos = Vector3.new()
+				
+				local distance = (origin - hitpos).Magnitude
+				local direction = CFrame.new(origin, hitpos) * CFrame.Angles(0, math.pi/2, 0) * CFrame.new(distance / 2, 0, 0)
+				
+				args[3] = {distance, direction}
+			end
+			
+			return old(self, unpack(args))
+		elseif typeof(args[1]) == "Vector3" and self.Parent and self.Parent.Name == "Mortar" then
+			--args[1] *= multiplier
+			return old(self, unpack(args))
 		end
 	end
 
-	return Old(Remote, ...)
+	return old(self, ...)
 end)
-setreadonly(MT, true)
+
+setreadonly(mt, true)
+
 --]]
