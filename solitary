@@ -8,13 +8,14 @@ local Backpack = Player.Backpack
 
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
-local library = require(ReplicatedStorage.lib) --loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
 local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
 	SpawnRate = 200,
+	DoWalkspeed = false,
 	WalkSpeed = 16,
 	SilentAim = false,
 	
@@ -70,7 +71,7 @@ for _, name in ipairs({"Sniper", "Thompson", "Machine Gun", "Mortar", "M1Garand"
 	Guns:CreateButton("Get " .. name, function() GetGun(name) end)
 end
 
-Guns:CreateToggle("Silent Aim bullets", function(enabled)
+Guns:CreateToggle("Silent Aim", function(enabled)
 	states.SilentAim = enabled
 end)
 
@@ -105,6 +106,10 @@ end
 --
 
 local Server = Menu:CreateSection("Server")
+
+Server:CreateToggle("Walkspeed enabled", function(enab)
+	states.DoWalkspeed = enab
+end)
 
 Server:CreateSlider("Walkspeed", 100, states.WalkSpeed, 1, function(value)
 	states.WalkSpeed = value
@@ -312,7 +317,7 @@ RunService.RenderStepped:Connect(function()
 		end
 	end
 	
-	if Player.Character then
+	if Player.Character and states.DoWalkspeed then
 		Player.Character.Humanoid.WalkSpeed = states.WalkSpeed
 	end
 end)
