@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 4")
+local Menu = library.new("Solitary UI 5")
 
 local states = {
 	Multiplier = 1,
@@ -91,7 +91,7 @@ Guns:CreateToggle("Silent Aim", function(enabled)
 	states.SilentAim = enabled
 end)
 
-Guns:CreateSlider("Field of view", 1000, states.Multiplier, 10, function(value)
+Guns:CreateSlider("Field of view", 1000, states.FieldOfView, 10, function(value)
 	states.FieldOfView = value
 end)
 
@@ -405,7 +405,7 @@ local function isVisible(from, to, ignoreList)
 	rayParams.FilterDescendantsInstances = ignoreList or {Player.Character}
 
 	local result = workspace.Raycast(workspace, from, (to - from).Unit * (to - from).Magnitude, rayParams)
-	return result == nil or false
+	return result == nil
 end
 
 function getClosestTargetToScreenPos(screenPos)
