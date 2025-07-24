@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 8")
+local Menu = library.new("Solitary UI 5")
 
 local states = {
 	Multiplier = 1,
@@ -46,8 +46,8 @@ fov_circle.Radius = 180
 fov_circle.Filled = false
 fov_circle.Visible = false
 fov_circle.ZIndex = 999
-fov_circle.Transparency = 1
-fov_circle.Color = Color3.fromRGB(54, 57, 241)
+fov_circle.Transparency = 0.8
+fov_circle.Color = Color3.fromRGB(170, 85, 255)
 
 function DamagePlayer(Target: Player, Amount: number)
 	if Target.Character and Target.Character:FindFirstChildWhichIsA("Humanoid") then
