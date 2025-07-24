@@ -8,9 +8,9 @@ local Backpack = Player.Backpack
 
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library = require(ReplicatedStorage.lib) --loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 2")
+local Menu = library.new("Solitary UI 3")
 
 local states = {
 	Multiplier = 1,
@@ -403,7 +403,7 @@ local function isVisible(from, to, ignoreList)
 	rayParams.FilterDescendantsInstances = ignoreList or {Player.Character}
 
 	local result = workspace:Raycast(from, (to - from).Unit * (to - from).Magnitude, rayParams)
-	return result == nil or result.Instance:IsDescendantOf(Players:GetPlayerFromCharacter(to.Parent).Character)
+	return result == nil or false
 end
 
 function getClosestTargetToScreenPos(screenPos)
@@ -418,7 +418,7 @@ function getClosestTargetToScreenPos(screenPos)
 		local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
 
 		if hrp and humanoid and humanoid.Health > 0 then
-			local worldToScreenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(hrp.Position)
+			local worldToScreenPoint, onScreen = workspace.Camera:WorldToScreenPoint(hrp.Position)
 			
 			if onScreen then
 				local dist = (Vector2.new(worldToScreenPoint.X, worldToScreenPoint.Y) - screenPos).Magnitude
