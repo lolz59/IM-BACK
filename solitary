@@ -10,7 +10,7 @@ local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI")
+local Menu = library.new("Solitary UI 2")
 
 local states = {
 	Multiplier = 1,
@@ -65,6 +65,10 @@ local Guns = Menu:CreateSection("Guns")
 
 Guns:CreateSlider("Damage mutliplier", 100, states.Multiplier, 1, function(value)
 	states.Multiplier = value
+end)
+
+Guns:CreateSlider("Spawn rate (ms)", 2000, function(value)
+	states.SpawnRate = value
 end)
 
 for _, name in ipairs({"Sniper", "Thompson", "Machine Gun", "Mortar", "M1Garand"}) do
