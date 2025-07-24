@@ -8,9 +8,9 @@ local Backpack = Player.Backpack
 
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library = require(ReplicatedStorage.lib) --loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI")
+local Menu = library.new("Trench war UI 650")
 
 local states = {
 	Multiplier = 1,
@@ -69,6 +69,10 @@ end)
 for _, name in ipairs({"Sniper", "Thompson", "Machine Gun", "Mortar", "M1Garand"}) do
 	Guns:CreateButton("Get " .. name, function() GetGun(name) end)
 end
+
+Guns:CreateToggle("Silent Aim bullets", function(enabled)
+	states.SilentAim = enabled
+end)
 
 Guns:CreateToggle("Mortar aimbot (WIP)", function(enabled)
 	states.MortarAim = enabled
@@ -327,17 +331,19 @@ task.spawn(function()
 					end
 				end
 			end
-
-			if states.TrollTarget and states.TrollTarget.Character then
+			
+			if states.Viewing then
 				local char = states.TrollTarget.Character
 
-				if char then
+				if char and states then
 					local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
 					if hrp then
 						workspace.CurrentCamera.CameraSubject = hrp
 					end
 				end
-
+			end
+			
+			if states.TrollTarget and states.TrollTarget.Character then
 				if states.HealTroll then
 					local dmg = -100
 					DamagePlayer(states.TrollTarget, dmg)
