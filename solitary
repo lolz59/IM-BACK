@@ -8,9 +8,9 @@ local Backpack = Player.Backpack
 
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library =loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI")
+local Menu = library.new("Solitary UI 2")
 
 local states = {
 	Multiplier = 1,
@@ -469,8 +469,8 @@ local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt, false)
 
-mt.__namecall = newcclosure(function(self, ...)
-	if getnamecallmethod() == "FireServer" and self.Name == "RemoteEvent" and self.Parent:IsA("Tool") then
+mt.__namecall = newcclosure(function(Remote: RemoteEvent, ...)
+	if getnamecallmethod() == "FireServer" and Remote.Name == "RemoteEvent" and Remote.Parent:IsA("Tool") then
 		local args = { ... }
 		
 		if typeof(args[2]) == "number" then
@@ -478,9 +478,9 @@ mt.__namecall = newcclosure(function(self, ...)
 			
 			if multiplier then
 				args[2] *= multiplier
+				return old(Remote, unpack(args))
 			end
 			
-			return old(self, unpack(args))
 
 			--[[
 			if states.SilentAim then
@@ -521,14 +521,10 @@ mt.__namecall = newcclosure(function(self, ...)
 					return old(self, ...) 
 				end
 			end]]
-		elseif typeof(args[1]) == "Vector3" and self.Parent and self.Parent.Name == "Mortar" then
-			--args[1] *= multiplier
 		end
-		
-		return old(self, unpack(args))
 	end
 
-	return old(self, ...)
+	return old(Remote, ...)
 end)
 
 setreadonly(mt, true)
