@@ -7,11 +7,11 @@ local Player = Players.LocalPlayer
 local Backpack = Player.Backpack
 
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
-local SayMessageRequest: RemoteEvent = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest");
+local textchannel = game:GetService("TextChatService"):WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 3")
+local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
@@ -167,40 +167,63 @@ Server:CreateToggle("Damage all", function(enabled)
 end)
 
 --
-
 local ohioConnection
+local characterConnection
 
 local function disableOhioMode()
 	if ohioConnection then
 		ohioConnection:Disconnect()
 		ohioConnection = nil
 	end
+	if characterConnection then
+		characterConnection:Disconnect()
+		characterConnection = nil
+	end
+end
+
+local function bindOhioToHumanoid(humanoid)
+	if ohioConnection then
+		ohioConnection:Disconnect()
+	end
+
+	ohioConnection = humanoid.Died:Once(function()
+		if not states.OhioMode then
+			disableOhioMode()
+			return
+		end
+
+		textchannel:SendAsync("💀 OHIO MODE TRIGGERED! EVERYONE PERISHES 💀")
+
+		for _, victim in ipairs(Players:GetPlayers()) do
+			if victim.Character and victim.Character:FindFirstChildWhichIsA("Humanoid") then
+				DamagePlayer(victim, victim.Character.Humanoid.Health + 100)
+			end
+		end
+	end)
 end
 
 local function enableOhioMode()
 	if not states.TrollTarget then return end
+	local target = states.TrollTarget
 
-	local char = states.TrollTarget.Character
-	local humanoid = char and char:FindFirstChildWhichIsA("Humanoid")
-	if not humanoid then return end
-
-	-- Disconnect old one
-	if ohioConnection then
-		ohioConnection:Disconnect()
-	end
-	warn("ran")
-
-	ohioConnection = humanoid.Died:Connect(function()
-		if not states.OhioMode then disableOhioMode() return end
-		SayMessageRequest:FireServer("💀 OHIO MODE TRIGGERED! EVERYONE PERISHES 💀")
-
-		for _, victim in ipairs(Players:GetPlayers()) do
-			if victim.Character then
-				DamagePlayer(victim, victim.Character.Humanoid.Health + 100)
-			end
+	-- Initial bind if character already exists
+	if target.Character then
+		local humanoid = target.Character:FindFirstChildWhichIsA("Humanoid")
+		if humanoid then
+			bindOhioToHumanoid(humanoid)
 		end
-		
-		enableOhioMode()
+	end
+
+	-- Re-bind every time character respawns
+	if characterConnection then
+		characterConnection:Disconnect()
+	end
+
+	characterConnection = target.CharacterAdded:Connect(function(newChar)
+		local newHumanoid = newChar:WaitForChild("Humanoid", 3)
+		if newHumanoid then
+			bindOhioToHumanoid(newHumanoid)
+		end
 	end)
 end
 
@@ -248,10 +271,10 @@ Target:CreateToggle("Ohio mode", function(enabled)
 	
 	if states.TrollTarget then
 		if enabled then
-			SayMessageRequest:FireServer("💀 WARNING: OHIO MODE ENABLED ON " .. states.TrollTarget.DisplayName .. "! IF THEY FALL, WE ALL DO. 🚨💀", "All")
+			textchannel:SendAsync("💀 WARNING: OHIO MODE ENABLED ON " .. states.TrollTarget.DisplayName .. "! IF THEY FALL, WE ALL DO. 🚨💀")
 			enableOhioMode()
 		else
-			SayMessageRequest:FireServer("✅ OHIO MODE DEACTIVATED FOR " .. states.TrollTarget.DisplayName .. ".", "All")
+			textchannel:SendAsync("✅ OHIO MODE DEACTIVATED FOR " .. states.TrollTarget.DisplayName .. ".")
 			disableOhioMode()
 		end
 	end
