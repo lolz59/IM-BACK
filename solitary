@@ -11,7 +11,7 @@ local textchannel = game:GetService("TextChatService"):WaitForChild("TextChannel
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 2")
+local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
@@ -166,74 +166,93 @@ Server:CreateToggle("Damage all", function(enabled)
 	states.DmgAll = enabled
 end)
 
+Server:CreateToggle("Ohio all", function(enabled)
+	states.OhioAllMode = enabled
+	disableOhioMode()
+
+	if enabled then
+		textchannel:SendAsync("🔴 GLOBAL OHIO MODE ENABLED! Anyone's death = everyone's death.")
+		enableOhioMode("all")
+	else
+		textchannel:SendAsync("🟢 GLOBAL OHIO MODE DISABLED. The server exhales...")
+	end
+end)
+
+
 --
-local ohioConnection
-local characterConnection
+local ohioConnections = {}
+local characterConnections = {}
 
-local function disableOhioMode()
-	if ohioConnection then
-		ohioConnection:Disconnect()
-		ohioConnection = nil
+local function disconnectAll(connections)
+	for _, conn in pairs(connections) do
+		if typeof(conn) == "RBXScriptConnection" and conn.Connected then
+			conn:Disconnect()
+		end
 	end
-	if characterConnection then
-		characterConnection:Disconnect()
-		characterConnection = nil
-	end
+	table.clear(connections)
 end
 
-local function bindOhioToHumanoid(humanoid)
-	if ohioConnection then
-		ohioConnection:Disconnect()
-	end
+local function bindDeathTrigger(humanoid, source)
+	local conn = humanoid.Died:Connect(function()
+		if source == "all" and not states.OhioAllMode then return end
+		if source == "target" and not states.OhioMode then return end
 
-	ohioConnection = humanoid.Died:Once(function()
-		if not states.OhioMode then
-			disableOhioMode()
-			return
-		end
-		
-		textchannel:SendAsync(`{states.TrollTarget} DIED IN OHIO! EVERYONE PERISHES 💀`)
-		
-		if Player.Character and not Player.Character:FindFirstChildWhichIsA("Tool") then
-			local tool = Player.Backpack:FindFirstChild("Pistol")
-			local hum = Player.Character:FindFirstChildWhichIsA("Humanoid")
-			
-			if hum and tool then
-				hum:EquipTool(tool)
-			end
-		end
+		local reason = (source == "all") and humanoid.Parent.Name or (states.TrollTarget and states.TrollTarget.DisplayName or "someone")
+		textchannel:SendAsync(`💣 OHIO MODE TRIGGERED BY {reason}'s DEATH. EVERYONE PERISHES 💀`)
 
-		for _, victim in ipairs(Players:GetPlayers()) do
-			if victim.Character and victim.Character:FindFirstChildWhichIsA("Humanoid") then
-				DamagePlayer(victim, victim.Character.Humanoid.Health + 100)
+		for _, player in ipairs(Players:GetPlayers()) do
+			local humanoid = player.Character and player.Character:FindFirstChildWhichIsA("Humanoid")
+			if humanoid then
+				DamagePlayer(player, humanoid.Health + 100)
 			end
 		end
 	end)
+
+	table.insert(ohioConnections, conn)
 end
 
-local function enableOhioMode()
-	if not states.TrollTarget then return end
-	local target = states.TrollTarget
-
-	-- Initial bind if character already exists
-	if target.Character then
-		local humanoid = target.Character:FindFirstChildWhichIsA("Humanoid")
+local function watchPlayer(player, source)
+	-- Hook current character
+	if player.Character then
+		local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
 		if humanoid then
-			bindOhioToHumanoid(humanoid)
+			bindDeathTrigger(humanoid, source)
 		end
 	end
 
-	-- Re-bind every time character respawns
-	if characterConnection then
-		characterConnection:Disconnect()
-	end
-
-	characterConnection = target.CharacterAdded:Connect(function(newChar)
-		local newHumanoid = newChar:WaitForChild("Humanoid", 3)
-		if newHumanoid then
-			bindOhioToHumanoid(newHumanoid)
+	-- Hook future characters
+	local charConn = player.CharacterAdded:Connect(function(char)
+		local hum = char:WaitForChild("Humanoid", 3)
+		if hum then
+			bindDeathTrigger(hum, source)
 		end
 	end)
+
+	table.insert(characterConnections, charConn)
+end
+
+function enableOhioMode(source)
+	disableOhioMode() -- Ensure clean state
+
+	if source == "all" then
+		for _, player in ipairs(Players:GetPlayers()) do
+			watchPlayer(player, "all")
+		end
+
+		-- Future players
+		local joinConn = Players.PlayerAdded:Connect(function(player)
+			watchPlayer(player, "all")
+		end)
+		table.insert(characterConnections, joinConn)
+
+	elseif source == "target" and states.TrollTarget then
+		watchPlayer(states.TrollTarget, "target")
+	end
+end
+
+function disableOhioMode()
+	disconnectAll(ohioConnections)
+	disconnectAll(characterConnections)
 end
 
 local Target = Menu:CreateSection("Target")
@@ -248,7 +267,7 @@ Target:CreateTextBox("Username", "Target", function(input)
 		local usernameMatch = player.Name:lower():sub(1, #inputLower) == inputLower
 		local displayNameMatch = player.DisplayName:lower():sub(1, #inputLower) == inputLower
 
-		if player ~= Player and (usernameMatch or displayNameMatch) then
+		if (usernameMatch or displayNameMatch) then
 			matchedPlayer = player
 			break
 		end
@@ -277,15 +296,13 @@ end)
 
 Target:CreateToggle("Ohio mode", function(enabled)
 	states.OhioMode = enabled
-	
-	if states.TrollTarget then
-		if enabled then
-			textchannel:SendAsync("💀 WARNING: OHIO MODE ENABLED ON " .. states.TrollTarget.DisplayName .. "! IF THEY FALL, WE ALL DO. 🚨")
-			enableOhioMode()
-		else
-			textchannel:SendAsync("✅ OHIO MODE DEACTIVATED FOR " .. states.TrollTarget.DisplayName .. ".")
-			disableOhioMode()
-		end
+	disableOhioMode()
+
+	if enabled and states.TrollTarget then
+		textchannel:SendAsync("💀 WARNING: OHIO MODE ENABLED ON " .. states.TrollTarget.DisplayName .. "! IF THEY FALL, WE ALL DO. 🚨")
+		enableOhioMode("target")
+	else
+		textchannel:SendAsync("✅ OHIO MODE DEACTIVATED FOR " .. states.TrollTarget.DisplayName .. ".")
 	end
 end)
 
