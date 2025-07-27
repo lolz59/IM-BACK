@@ -182,6 +182,7 @@ end)
 --
 local ohioConnections = {}
 local characterConnections = {}
+local ohiodebounce = false
 
 local function disconnectAll(connections)
 	for _, conn in pairs(connections) do
@@ -193,19 +194,34 @@ local function disconnectAll(connections)
 end
 
 local function bindDeathTrigger(humanoid, source)
-	local conn = humanoid.Died:Connect(function()
+	local conn = humanoid.Died:Once(function()
+		if ohiodebounce then return end
 		if source == "all" and not states.OhioAllMode then return end
 		if source == "target" and not states.OhioMode then return end
+		
+		ohiodebounce = true
 
 		local reason = (source == "all") and humanoid.Parent.Name or (states.TrollTarget and states.TrollTarget.DisplayName or "someone")
 		textchannel:SendAsync(`💣 OHIO MODE TRIGGERED BY {reason}'s DEATH. EVERYONE PERISHES 💀`)
+		
+		if Player.Character and not Player.Character:FindFirstChildWhichIsA("Tool") then
+			local tool = Player.Backpack:FindFirstChild("Pistol")
+			local hum = Player.Character:FindFirstChildWhichIsA("Humanoid")
 
+			if hum and tool then
+				hum:EquipTool(tool)
+			end
+		end
+		
 		for _, player in ipairs(Players:GetPlayers()) do
 			local humanoid = player.Character and player.Character:FindFirstChildWhichIsA("Humanoid")
 			if humanoid then
 				DamagePlayer(player, humanoid.Health + 100)
 			end
 		end
+		
+		task.wait(1)
+		ohiodebounce = false
 	end)
 
 	table.insert(ohioConnections, conn)
