@@ -9,9 +9,9 @@ local Backpack = Player.Backpack
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 local SayMessageRequest: RemoteEvent = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest");
 
-local library = require(ReplicatedStorage.lib) --loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI")
+local Menu = library.new("Solitary UI 3")
 
 local states = {
 	Multiplier = 1,
