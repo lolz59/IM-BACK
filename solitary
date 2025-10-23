@@ -11,7 +11,7 @@ local textchannel = game:GetService("TextChatService"):WaitForChild("TextChannel
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 2")
+local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
@@ -551,8 +551,10 @@ RunService.RenderStepped:Connect(function()
 			if victimchar and victimchar.PrimaryPart then
 				char:PivotTo(CFrame.new(victimchar.PrimaryPart.Position + Vector3.new(0, 5, 0)))
 			end
-		elseif states.AirstrikePos then
-			char:PivotTo(states.AirstrikePos)
+		end
+		
+		if states.AirstrikePos then
+			char:PivotTo(CFrame.new(states.AirstrikePos))
 		end
 
 		if states.DoWalkspeed then
