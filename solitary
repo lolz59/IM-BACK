@@ -9,9 +9,9 @@ local Backpack = Player.Backpack
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 local textchannel = game:GetService("TextChatService"):WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
 
-local library =loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI")
+local Menu = library.new("Solitary")
 
 local states = {
 	Multiplier = 1,
@@ -152,8 +152,8 @@ for _, name in ipairs(orderedNames) do
 	Airstrike:CreateButton(name, function()
 		if states.AirstrikePos then return end
 		
-		local startPos = Vector3.new(-163, 100, spawnPoints[name])
-		local endPos = Vector3.new(163, 100, spawnPoints[name])
+		local startPos = Vector3.new(-163, 110, spawnPoints[name])
+		local endPos = Vector3.new(163, 110, spawnPoints[name])
 		
 		for i = 0, airstrikeamount do
 			states.AirstrikePos = startPos:Lerp(endPos, i/airstrikeamount)
