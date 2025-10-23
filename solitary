@@ -9,9 +9,9 @@ local Backpack = Player.Backpack
 local GameEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Event")
 local textchannel = game:GetService("TextChatService"):WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
+local library =loadstring(game:HttpGet("https://raw.githubusercontent.com/lolz59/library/refs/heads/main/ice.lua"))()
 
-local Menu = library.new("Solitary UI 3")
+local Menu = library.new("Solitary UI")
 
 local states = {
 	Multiplier = 1,
@@ -142,6 +142,11 @@ end
 -- 
 
 local Airstrike = Menu:CreateSection("Airstrike")
+local airstrikeamount = 20
+
+Airstrike:CreateSlider("Bomb Amount", 50, airstrikeamount, 1, function(value)
+	airstrikeamount = value
+end)
 
 for _, name in ipairs(orderedNames) do
 	Airstrike:CreateButton(name, function()
@@ -150,8 +155,8 @@ for _, name in ipairs(orderedNames) do
 		local startPos = Vector3.new(-163, 100, spawnPoints[name])
 		local endPos = Vector3.new(163, 100, spawnPoints[name])
 		
-		for i = 0, 25 do
-			states.AirstrikePos = startPos:Lerp(endPos, i/25)
+		for i = 0, airstrikeamount do
+			states.AirstrikePos = startPos:Lerp(endPos, i/airstrikeamount)
 			
 			local char = Player.Character
 			GameEvent:FireServer("Spawn", {[2] = states.AirstrikePos})
